@@ -6,8 +6,13 @@ import BattleHUD from "./scenes/BattleHUD";
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
-    width: 1366,
-    height: 900,
+    width: 1920,
+    height: 1080,
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
+    pixelArt: true,
     parent: "game-container",
     backgroundColor: "#FFFFFF",
     scene: [BattleScene, BattleHUD],

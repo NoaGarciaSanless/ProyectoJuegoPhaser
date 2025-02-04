@@ -26,6 +26,13 @@ defineExpose({ scene, game });
 
 </script>
 
+<style scoped>
+.game-wrapper {
+    width: 100dvw;
+    height: 100dvh;
+}
+</style>
+
 <template>
-    <div id="game-container"></div>
+    <div id="game-container" class="game-wrapper"></div>
 </template>

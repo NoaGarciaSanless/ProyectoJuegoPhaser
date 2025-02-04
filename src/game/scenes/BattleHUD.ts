@@ -17,12 +17,18 @@ export default class BattleHUD extends Phaser.Scene {
             "assets/buttons/botones_anim.png",
             "assets/buttons/botones_anim.json"
         );
+
     }
 
     create() {
         const { width, height } = this.scale;
 
-        // this.anims.createFromAseprite("buttons");
+        // Other scenes
+        const battleScece = this.scene.get("BattleScene");
+
+        let canAttack = true;
+
+        // Functions ------------------------------------------
 
         this.atkBTN = this.add
             .sprite(0, 0, "buttons", "0")
@@ -32,11 +38,24 @@ export default class BattleHUD extends Phaser.Scene {
         this.atkBTN.setPosition(20, height - 30);
 
         this.atkBTN.on("pointerdown", () => {
-            this.atkBTN.setFrame(1);
+            // If the player can attack, plays the character attack animation
+            if (canAttack) {
+                this.atkBTN.setFrame(1);
+
+                // Activates the attack in the BattleScene
+                battleScece.events.emit("character-attack");
+                canAttack = false;
+            }
         });
 
         this.atkBTN.on("pointerup", () => {
             this.atkBTN.setFrame(0);
+        });
+
+        // Events ---------------------------------------------
+        // Button functionality
+        this.events.on("allow-attack", () => {
+            canAttack = true;
         });
     }
 
