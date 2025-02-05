@@ -1,20 +1,37 @@
-import { log } from "console";
 import { GameObjects } from "phaser";
 
 import Phaser from "phaser";
+import BattleHUD from "./BattleHUD";
+
+// States of the battle
+enum BattleState {
+    PlayerTurn,
+    EnemyTurn,
+    Animation,
+    EndTurn,
+}
 
 export default class BattleScene extends Phaser.Scene {
+    // Sprites used in the scene
     forestBg: GameObjects.Image;
     ground: GameObjects.Image;
     character: GameObjects.Sprite;
     enemy1: GameObjects.Sprite;
+
+    // Other scenes
+    battleHUD: BattleHUD | undefined;
+
+    // Variables for the battle logic
+    currentState: BattleState = BattleState.PlayerTurn;
+
+    playerHealth: number = 100;
+    enemyHealth: number = 100;
 
     constructor() {
         super("BattleScene");
     }
 
     preload() {
-        // Aquí cargas los recursos como imágenes o sonidos
         this.load.image("forestBG", "assets/backgrounds/bosque.png");
         this.load.image("ground", "assets/backgrounds/suelo.png");
 
@@ -41,7 +58,7 @@ export default class BattleScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // Other scenes
-        const battleHUD = this.scene.get("BattleHUD");
+        this.battleHUD = this.scene.get("BattleHUD") as BattleHUD;
 
         // Frames for the sprites
         const treeFrames = ["Arbol-0", "Arbol-1", "Arbol-2"];
@@ -114,22 +131,85 @@ export default class BattleScene extends Phaser.Scene {
         this.character.play({ key: "Idle_combate", repeat: -1 });
 
         // Events ---------------------------------------------
-        // Character events
+        // Character events....................................
+
+        // Character attack
         this.events.on("character-attack", () => {
+            // If its not the player turn it will not play the animation
+            if (this.currentState !== BattleState.PlayerTurn) return;
+
             this.character.anims.timeScale = 0.8;
             this.character.play({ key: "Ataque" });
 
             // Esperar a que termine "Ataque" antes de reproducir "Idle"
             this.character.once("animationcomplete-Ataque", () => {
+                this.enemy1.setTint(0xff0000);
+                setTimeout(() => {
+                    this.enemy1.clearTint();
+                }, 500);
+
                 this.character.play({ key: "Idle_combate", repeat: -1 });
                 this.character.anims.timeScale = 0.3;
 
-                battleHUD.events.emit("allow-attack");
+                this.currentState = BattleState.Animation;
+                this.nextTurn();
             });
         });
     }
 
-    update() {
-        // Aquí gestionas la lógica de actualización del juego, como el movimiento
+    // Function to control the turn logic
+    async nextTurn() {
+        if (this.currentState === BattleState.PlayerTurn) {
+            // Let the player attack when the turn begins
+            console.log("Player's Turn");
+            this.battleHUD?.events.emit("allow-attack");
+        } else if (this.currentState === BattleState.EnemyTurn) {
+            // Waits for the enemy to finish it's action
+            console.log("Enemy's Turn");
+            await this.enemyAttack();
+
+            // Moves to the next turn
+            this.currentState = BattleState.EndTurn;
+            this.nextTurn();
+        } else if (this.currentState === BattleState.Animation) {
+            setTimeout(() => {
+                console.log("Animations playing");
+
+                // Moves to the next turn
+                this.currentState = BattleState.EnemyTurn;
+                this.nextTurn();
+            }, 2000);
+        } else if (this.currentState === BattleState.EndTurn) {
+            console.log("End Turn - Waiting...");
+            setTimeout(() => {
+                // Moves to the next turn
+                this.currentState = BattleState.PlayerTurn;
+                this.nextTurn();
+                console.log("Player's Turn again");
+            }, 1000);
+        }
     }
+
+    enemyAttack(): Promise<void> {
+        return new Promise((resolve) => {
+            this.enemy1.anims.timeScale = 0.8;
+            this.enemy1.play("Ataque_izq");
+
+            this.enemy1.once("animationcomplete-Ataque_izq", () => {
+                this.character.setTint(0xff0000);
+                setTimeout(() => {
+                    this.character.clearTint();
+                }, 500);
+
+                this.enemy1.anims.timeScale = 0.3;
+                this.enemy1.play({ key: "Idle_izq", repeat: -1 });
+
+                setTimeout(() => {
+                    resolve(); // Resolvemos la promesa cuando la animación ha terminado
+                }, 500);
+            });
+        });
+    }
+
+    update() {}
 }
