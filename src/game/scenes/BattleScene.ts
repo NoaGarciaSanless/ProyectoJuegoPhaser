@@ -9,6 +9,7 @@ enum BattleState {
     EnemyTurn,
     Animation,
     EndTurn,
+    FinishScreen,
 }
 
 export default class BattleScene extends Phaser.Scene {
@@ -23,9 +24,17 @@ export default class BattleScene extends Phaser.Scene {
 
     // Variables for the battle logic
     currentState: BattleState = BattleState.PlayerTurn;
+    lastState: BattleState = this.currentState;
+
+    turn: number = 1;
 
     playerHealth: number = 100;
     enemyHealth: number = 100;
+
+    playerBaseAtk: number = 10;
+    enemyBaseAtk: number = 10;
+
+    playerCritChance: number = 3;
 
     constructor() {
         super("BattleScene");
@@ -106,6 +115,12 @@ export default class BattleScene extends Phaser.Scene {
         // Load the HUD in top of this scene
         this.scene.launch("BattleHUD");
 
+        // Iniziates the turn text
+        this.time.delayedCall(50, () => {
+            this.showTurnText(this.turn, "turns", "showTurn");
+            this.turn++;
+        });
+
         // Characters -----------------------------------------
 
         // Skeleton
@@ -134,35 +149,31 @@ export default class BattleScene extends Phaser.Scene {
         // Character events....................................
 
         // Character attack
-        this.events.on("character-attack", () => {
+        this.events.on("character-attack", async () => {
             // If its not the player turn it will not play the animation
             if (this.currentState !== BattleState.PlayerTurn) return;
 
-            this.character.anims.timeScale = 0.8;
-            this.character.play({ key: "Ataque" });
-
-            // Esperar a que termine "Ataque" antes de reproducir "Idle"
-            this.character.once("animationcomplete-Ataque", () => {
-                this.enemy1.setTint(0xff0000);
-                setTimeout(() => {
-                    this.enemy1.clearTint();
-                }, 500);
-
-                this.character.play({ key: "Idle_combate", repeat: -1 });
-                this.character.anims.timeScale = 0.3;
-
-                this.currentState = BattleState.Animation;
-                this.nextTurn();
-            });
+            // Waits for the player attack
+            await this.playerAttack();
+            this.currentState = BattleState.EndTurn;
+            this.nextTurn();
         });
     }
 
     // Function to control the turn logic
     async nextTurn() {
         if (this.currentState === BattleState.PlayerTurn) {
-            // Let the player attack when the turn begins
+            // Cleans the text for new round and shows the number of the new round
+            this.battleHUD?.events.emit("clean_text");
+            this.showTurnText(this.turn, "turns", "showTurn");
+            this.turn++;
+
             console.log("Player's Turn");
+
+            // Let the player attack when the turn begins
             this.battleHUD?.events.emit("allow-attack");
+
+            return;
         } else if (this.currentState === BattleState.EnemyTurn) {
             // Waits for the enemy to finish it's action
             console.log("Enemy's Turn");
@@ -181,13 +192,97 @@ export default class BattleScene extends Phaser.Scene {
             }, 2000);
         } else if (this.currentState === BattleState.EndTurn) {
             console.log("End Turn - Waiting...");
-            setTimeout(() => {
-                // Moves to the next turn
-                this.currentState = BattleState.PlayerTurn;
+            if (this.playerHealth <= 0) {
+                console.log("Game Over");
+
+                this.battleHUD?.events.emit("game_over");
+
+                this.currentState = BattleState.FinishScreen;
                 this.nextTurn();
-                console.log("Player's Turn again");
-            }, 1000);
+            } else if (this.enemyHealth <= 0) {
+                console.log("Victory");
+
+                this.battleHUD?.events.emit("victory");
+
+                this.currentState = BattleState.FinishScreen;
+                this.nextTurn();
+            } else {
+                setTimeout(() => {
+                    console.log(
+                        `Player:${this.playerHealth}, Enemy: ${this.enemyHealth}`
+                    );
+
+                    if (this.lastState === BattleState.PlayerTurn) {
+                        this.currentState = BattleState.EnemyTurn;
+                    } else if (this.lastState === BattleState.EnemyTurn) {
+                        this.currentState = BattleState.PlayerTurn;
+
+                        // setTimeout(
+                        //     () => this.battleHUD?.events.emit("clean_text"),
+                        //     500
+                        // );
+                    }
+                    this.lastState = this.currentState;
+
+                    // Moves to the next turn
+                    this.nextTurn();
+                }, 1000);
+            }
+        } else if (this.currentState === BattleState.FinishScreen) {
+            return;
         }
+    }
+
+    // Shows a text with the turn info
+    showTurnText(
+        cuantity: number,
+        character: string,
+        action: string,
+        target?: string
+    ) {
+        this.battleHUD?.events.emit(
+            "show_text",
+            cuantity,
+            character,
+            action,
+            target
+        );
+    }
+
+    playerAttack(): Promise<void> {
+        return new Promise((resolve) => {
+            this.character.anims.timeScale = 0.8;
+            this.character.play({ key: "Ataque" });
+
+            // Esperar a que termine "Ataque" antes de reproducir "Idle"
+            this.character.once("animationcomplete-Ataque", () => {
+                this.enemy1.setTint(0xff0000);
+                setTimeout(() => {
+                    this.enemy1.clearTint();
+                }, 500);
+
+                // Calculates the damage of the attack
+                let critical = this.isCriticalHit(this.playerCritChance);
+                let totalAtk = this.playerBaseAtk * (critical ? 2 : 1);
+
+                // Lowers the enemy health
+                this.enemyHealth = this.enemyHealth - totalAtk;
+
+                if (critical) {
+                    this.showMessage("Critical hit!");
+                    console.log("Critico");
+                }
+
+                this.showTurnText(totalAtk, "player", "attack", "enemy1");
+
+                this.character.play({ key: "Idle_combate", repeat: -1 });
+                this.character.anims.timeScale = 0.3;
+
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            });
+        });
     }
 
     enemyAttack(): Promise<void> {
@@ -201,15 +296,51 @@ export default class BattleScene extends Phaser.Scene {
                     this.character.clearTint();
                 }, 500);
 
+                // Calculates the damage of the attack
+                let critical = this.isCriticalHit(1);
+                let totalAtk = this.enemyBaseAtk * (critical ? 2 : 1);
+
+                // Lowers the player health
+                this.playerHealth = this.playerHealth - totalAtk;
+
+                if (critical) {
+                    this.showMessage("Critical hit!");
+                    console.log("Critico");
+                }
+
+                this.showTurnText(totalAtk, "enemy", "attack", "player");
+
                 this.enemy1.anims.timeScale = 0.3;
                 this.enemy1.play({ key: "Idle_izq", repeat: -1 });
 
                 setTimeout(() => {
-                    resolve(); // Resolvemos la promesa cuando la animación ha terminado
+                    resolve();
                 }, 500);
             });
         });
     }
 
+    isCriticalHit(critChance: number): Boolean {
+        let number = Phaser.Math.Between(1, 10);
+
+        console.log(number);
+
+        if (number <= critChance) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    showMessage(text: string) {
+        this.battleHUD?.events.emit("extra_text", text);
+    }
+
     update() {}
+
+    destroy() {
+        this.events.removeAllListeners();
+        this.children.removeAll();
+        this.textures.destroy();
+    }
 }

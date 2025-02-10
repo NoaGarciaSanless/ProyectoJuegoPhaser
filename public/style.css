@@ -1,3 +1,8 @@
+@font-face {
+    font-family: 'MyCustomFont';
+    src: url('./assets/fonts/Myfont-Regular.ttf') format('truetype');
+}
+
 body {
     margin: 0;
     padding: 0;

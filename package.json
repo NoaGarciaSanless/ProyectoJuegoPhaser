@@ -28,6 +28,7 @@
     },
     "dependencies": {
         "phaser": "^3.87.0",
+        "phaser3-rex-plugins": "^1.80.13",
         "vue": "^3.4.27"
     },
     "devDependencies": {

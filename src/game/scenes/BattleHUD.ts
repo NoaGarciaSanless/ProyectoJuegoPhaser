@@ -3,9 +3,15 @@ import { GameObjects } from "phaser";
 import Phaser from "phaser";
 import BattleScene from "./BattleScene";
 
+// Plugin to change the color in some text easily
+import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
+
 export default class BattleHUD extends Phaser.Scene {
+    rexUI!: RexUIPlugin;
+
     // Containers to group the elements of the scene
     buttonContainer: GameObjects.Container;
+    textContainer: GameObjects.Container;
 
     // Sprites used in the scene
     // Buttons
@@ -55,6 +61,20 @@ export default class BattleHUD extends Phaser.Scene {
         // Variables to control buttons
         let canAttack = true;
 
+        this.textContainer = this.add.container(width / 2, 0);
+
+        const bgWidth = width / 2;
+        const bgHeight = 150;
+
+        // Crear un fondo como rectángulo
+        const bg = this.add.graphics();
+        bg.fillStyle(0x000000, 0.75);
+        bg.fillRect(-bgWidth / 2, 20, bgWidth, bgHeight);
+
+        this.textContainer.add(bg);
+
+        // Buttons
+
         this.buttonContainer = this.add.container(width / 2, height - 100);
 
         this.atkBTN = this.add
@@ -99,9 +119,153 @@ export default class BattleHUD extends Phaser.Scene {
         this.events.on("cancel-attack", () => {
             canAttack = false;
         });
+
+        // Victory GameOver Texts
+        this.events.on("game_over", () => {
+            let text = this.add.text(width, height / 2, "Game Over!", {
+                fontFamily: "MyCustomFont",
+                fontSize: "96px",
+                color: "#ffffff",
+            });
+
+            this.tweens.add({
+                targets: text,
+                x: width / 3.5,
+                duration: 1000,
+                ease: "Power2",
+            });
+        });
+
+        this.events.on("victory", () => {
+            let text = this.add.text(0 - width * 0.2, height / 2, "Victory!", {
+                fontFamily: "MyCustomFont",
+                fontSize: "96px",
+                color: "#ffffff",
+            });
+
+            this.tweens.add({
+                targets: text,
+                x: width / 3,
+                duration: 1000,
+                ease: "Power2",
+            });
+        });
+
+        // Messages *******************************************
+        // Turns
+        this.events.on(
+            "show_text",
+            (
+                cuantity: number,
+                character: string,
+                action: string,
+                target?: string
+            ) => {
+                let messageText = "";
+
+                if (action === "showTurn") {
+                    messageText = `Turn ${cuantity}`;
+
+                    let message = this.rexUI.add.BBCodeText(0, 0, messageText, {
+                        fontFamily: "MyCustomFont",
+                        fontSize: "32px",
+                        color: "#ffffff",
+                    });
+
+                    this.textContainer.add(message);
+                    message.setOrigin(0.5, 0.5);
+
+                    message.x = 0;
+                    message.y = 25;
+
+                    return;
+                }
+
+                if (action === "attack") {
+                    if (character == "player") {
+                        messageText += `The [color=green]${character}[/color] `;
+                    } else {
+                        messageText += `The [color=red]${character}[/color] `;
+                    }
+
+                    messageText += `has dealt  [color=yellow]${cuantity} damage[/color]  `;
+
+                    if (target == "player") {
+                        messageText += `to [color=green]${target}[/color] `;
+                    } else {
+                        messageText += `to [color=red]${target}[/color] `;
+                    }
+                }
+
+                let message = this.rexUI.add.BBCodeText(0, 0, messageText, {
+                    fontFamily: "MyCustomFont",
+                    fontSize: "24px",
+                    color: "#ffffff",
+                });
+
+                // Adds the text to the container and centers it in the container
+                this.textContainer.add(message);
+                message.setOrigin(0.5, 0.5);
+
+                console.log(this.textContainer.length);
+
+                let totalMessages = this.textContainer.length - 2;
+
+                message.y = 40 + totalMessages * 40;
+            }
+        );
+
+        this.events.on("clean_text", () => {
+            const childrenList = this.textContainer.getAll();
+            if (childrenList.length > 1) {
+                for (let i = 1; i < childrenList.length; i++) {
+                    childrenList[i].destroy();
+                }
+                this.textContainer.removeBetween(1);
+            }
+        });
+
+        // Other messages
+        this.events.on("extra_text", (text: string) => {
+            let processedText = `[color=yellow]${text}[/color]`;
+            let message = this.rexUI.add.BBCodeText(
+                0 - width * 0.2,
+                height / 2,
+                processedText,
+                {
+                    fontFamily: "MyCustomFont",
+                    fontSize: "64px",
+                    color: "#ffffff",
+                }
+            );
+            message.setOrigin(0.5, 0.5);
+
+            this.tweens.add({
+                targets: message,
+                x: width / 2,
+                duration: 1000,
+                ease: "Power2",
+            });
+
+            setTimeout(() => {
+                this.tweens.add({
+                    targets: message,
+                    x: width * 2,
+                    duration: 1000,
+                    ease: "Power2",
+                    onComplete: () => {
+                        message.destroy();
+                    },
+                });
+            }, 1000);
+        });
     }
 
-    update() {
-        // Aquí gestionas la lógica de actualización del juego, como el movimiento
+    update() {}
+
+    destroy() {
+        this.events.removeAllListeners();
+        this.children.removeAll();
+        this.textures.destroy();
     }
 }
