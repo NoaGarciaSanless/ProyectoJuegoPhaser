@@ -98,7 +98,6 @@ export default class BattleScene extends Phaser.Scene {
         }
 
         // Background -----------------------------------------
-
         this.forestBg = this.add.sprite(0, 0, "forestBG");
 
         this.forestBg.setOrigin(0, 0);
@@ -127,23 +126,41 @@ export default class BattleScene extends Phaser.Scene {
         this.anims.createFromAseprite("skeleton");
 
         this.enemy1 = this.add
-            .sprite(0, 0, "skeleton", 16)
-            .setOrigin(-5, -2.4)
+            .sprite(width / 1.5, height / 1.4, "skeleton", 16)
+            .setOrigin(0.5, 0.5)
             .setScale(4, 4);
 
         this.enemy1.anims.timeScale = 0.3;
         this.enemy1.play({ key: "Idle_izq", repeat: -1 });
 
+        this.time.delayedCall(50, () => {
+            this.createHealthBar(
+                this.enemy1.x,
+                this.enemy1.y,
+                this.enemyHealth,
+                "enemy1"
+            );
+        });
+
         // Hood character
         this.anims.createFromAseprite("hood");
 
         this.character = this.add
-            .sprite(0, 0, "hood", 0)
-            .setOrigin(-1, -2.5)
+            .sprite(width / 3.5, height / 1.4, "hood", 0)
+            .setOrigin(0.5, 0.5)
             .setScale(4, 4);
 
         this.character.anims.timeScale = 0.3;
         this.character.play({ key: "Idle_combate", repeat: -1 });
+
+        this.time.delayedCall(50, () => {
+            this.createHealthBar(
+                this.character.x,
+                this.character.y,
+                this.playerHealth,
+                "player1"
+            );
+        });
 
         // Events ---------------------------------------------
         // Character events....................................
@@ -228,12 +245,16 @@ export default class BattleScene extends Phaser.Scene {
                     this.nextTurn();
                 }, 1000);
             }
+
+            // Updates the health bars to show properly
+            this.updateHealthBar(this.playerHealth, "player1");
+            this.updateHealthBar(this.enemyHealth, "enemy1");
         } else if (this.currentState === BattleState.FinishScreen) {
             return;
         }
     }
 
-    // Shows a text with the turn info
+    // Shows a text with the turn info, in the turn container
     showTurnText(
         cuantity: number,
         character: string,
@@ -249,12 +270,33 @@ export default class BattleScene extends Phaser.Scene {
         );
     }
 
+    // Shows a text in the middle of the screen
+    showMessage(text: string) {
+        this.battleHUD?.events.emit("extra_text", text);
+    }
+
+    // Method to tell the HUD to create the health bar
+    createHealthBar(posX: number, posY: number, health: number, key: string) {
+        this.battleHUD?.events.emit(
+            "create_health_bar",
+            posX,
+            posY,
+            health,
+            key
+        );
+    }
+
+    // Method to update the healthbar
+    updateHealthBar(cuantity: number, key: string) {
+        this.battleHUD?.events.emit("update_health_bar", cuantity, key);
+    }
+
+    // Logic for the player attack
     playerAttack(): Promise<void> {
         return new Promise((resolve) => {
             this.character.anims.timeScale = 0.8;
             this.character.play({ key: "Ataque" });
 
-            // Esperar a que termine "Ataque" antes de reproducir "Idle"
             this.character.once("animationcomplete-Ataque", () => {
                 this.enemy1.setTint(0xff0000);
                 setTimeout(() => {
@@ -267,6 +309,10 @@ export default class BattleScene extends Phaser.Scene {
 
                 // Lowers the enemy health
                 this.enemyHealth = this.enemyHealth - totalAtk;
+
+                if (totalAtk > 0) {
+                    this.updateHealthBar(this.enemyHealth, "enemy1");
+                }
 
                 if (critical) {
                     this.showMessage("Critical hit!");
@@ -285,6 +331,7 @@ export default class BattleScene extends Phaser.Scene {
         });
     }
 
+    // Logic for the enemy attack
     enemyAttack(): Promise<void> {
         return new Promise((resolve) => {
             this.enemy1.anims.timeScale = 0.8;
@@ -303,6 +350,10 @@ export default class BattleScene extends Phaser.Scene {
                 // Lowers the player health
                 this.playerHealth = this.playerHealth - totalAtk;
 
+                if (totalAtk > 0) {
+                    this.updateHealthBar(this.playerHealth, "player1");
+                }
+
                 if (critical) {
                     this.showMessage("Critical hit!");
                     console.log("Critico");
@@ -320,6 +371,7 @@ export default class BattleScene extends Phaser.Scene {
         });
     }
 
+    // Tells if the attack is critical or not
     isCriticalHit(critChance: number): Boolean {
         let number = Phaser.Math.Between(1, 10);
 
@@ -330,10 +382,6 @@ export default class BattleScene extends Phaser.Scene {
         } else {
             return false;
         }
-    }
-
-    showMessage(text: string) {
-        this.battleHUD?.events.emit("extra_text", text);
     }
 
     update() {}

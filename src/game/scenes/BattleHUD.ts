@@ -7,7 +7,7 @@ import BattleScene from "./BattleScene";
 import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
 
 export default class BattleHUD extends Phaser.Scene {
-    rexUI!: RexUIPlugin;
+    rexUI: RexUIPlugin;
 
     // Containers to group the elements of the scene
     buttonContainer: GameObjects.Container;
@@ -17,6 +17,9 @@ export default class BattleHUD extends Phaser.Scene {
     // Buttons
     atkBTN: GameObjects.Sprite;
     defBTN: GameObjects.Sprite;
+
+    // Health bars
+    healthBars: { [key: string]: any } = {};
 
     // Other scenes
     battleScece: BattleScene;
@@ -50,6 +53,12 @@ export default class BattleHUD extends Phaser.Scene {
             "assets/buttons/botones_anim.png",
             "assets/buttons/botones_anim.json"
         );
+
+        this.load.aseprite(
+            "icons",
+            "assets/UI/iconosUI_phaser.png",
+            "assets/UI/iconosUI_phaser.json"
+        );
     }
 
     create() {
@@ -66,15 +75,14 @@ export default class BattleHUD extends Phaser.Scene {
         const bgWidth = width / 2;
         const bgHeight = 150;
 
-        // Crear un fondo como rectángulo
+        // Background for the textcontainer
         const bg = this.add.graphics();
         bg.fillStyle(0x000000, 0.75);
         bg.fillRect(-bgWidth / 2, 20, bgWidth, bgHeight);
 
         this.textContainer.add(bg);
 
-        // Buttons
-
+        // Buttons --------------------------------------------
         this.buttonContainer = this.add.container(width / 2, height - 100);
 
         this.atkBTN = this.add
@@ -82,7 +90,6 @@ export default class BattleHUD extends Phaser.Scene {
             .setOrigin(0.5, 0.5)
             .setDisplaySize(width / 10, height / 10);
         this.atkBTN.setInteractive();
-        // this.atkBTN.setPosition(20, height - 30);
 
         this.defBTN = this.add
             .sprite(0, 0, "buttons", 2)
@@ -94,7 +101,10 @@ export default class BattleHUD extends Phaser.Scene {
         this.buttonContainer.add(btnList);
         this.arrangeElements(btnList, width);
 
+        // Healthbars -----------------------------------------
+
         // Events ---------------------------------------------
+        // Button functionality
         this.atkBTN.on("pointerdown", () => {
             // If the player can attack, plays the character attack animation
             if (canAttack) {
@@ -110,14 +120,76 @@ export default class BattleHUD extends Phaser.Scene {
             this.atkBTN.setFrame(0);
         });
 
-        // Events ---------------------------------------------
-        // Button functionality
         this.events.on("allow-attack", () => {
             canAttack = true;
         });
 
         this.events.on("cancel-attack", () => {
             canAttack = false;
+        });
+
+        // Characters health bars
+        this.events.on(
+            "create_health_bar",
+            (posX: number, posY: number, health: number, key: string) => {
+                let newHealthBar = this.rexUI.add
+                    .numberBar({
+                        x: posX,
+                        y: posY + 115,
+                        width: 300,
+                        height: 20,
+                        icon: this.add.sprite(0, 0, "icons", 0).setScale(2, 2),
+
+                        slider: {
+                            // width: 120, // Fixed width
+                            track: this.rexUI.add.roundRectangle(
+                                0,
+                                0,
+                                0,
+                                0,
+                                10,
+                                0x414040
+                            ),
+                            indicator: this.rexUI.add.roundRectangle(
+                                0,
+                                0,
+                                0,
+                                0,
+                                10,
+                                0xff1a1a
+                            ),
+                        },
+                        text: this.add.text(0, 0, `${health}HP`, {
+                            fontFamily: "MyCustomFont",
+                            fontSize: "16px",
+                            color: "#000",
+                        }),
+                        space: {
+                            left: 10,
+                            right: 10,
+                            top: 10,
+                            bottom: 10,
+                            icon: 10,
+                            slider: 10,
+                        },
+                    })
+                    .layout();
+
+                this.add.existing(newHealthBar);
+                newHealthBar.setValue(health, 0, health);
+                this.healthBars[key] = newHealthBar;
+            }
+        );
+
+        // Updates the characters health bar
+        this.events.on("update_health_bar", (cuantity: number, key: string) => {
+            let barToUpdate = this.healthBars[key];
+
+            if (barToUpdate) {
+                // Duration of the animation to lower the bars
+                barToUpdate.setValue(cuantity, 0, 100);
+                barToUpdate.text = `${cuantity}HP`;
+            }
         });
 
         // Victory GameOver Texts
