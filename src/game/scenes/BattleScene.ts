@@ -133,6 +133,8 @@ export default class BattleScene extends Phaser.Scene {
         this.enemy1.anims.timeScale = 0.3;
         this.enemy1.play({ key: "Idle_izq", repeat: -1 });
 
+        this.playIdleAnimation(this.enemy1, "Idle_izq");
+
         this.time.delayedCall(50, () => {
             this.createHealthBar(
                 this.enemy1.x,
@@ -150,8 +152,7 @@ export default class BattleScene extends Phaser.Scene {
             .setOrigin(0.5, 0.5)
             .setScale(4, 4);
 
-        this.character.anims.timeScale = 0.3;
-        this.character.play({ key: "Idle_combate", repeat: -1 });
+        this.playIdleAnimation(this.character, "Idle_combate")
 
         this.time.delayedCall(50, () => {
             this.createHealthBar(
@@ -208,11 +209,11 @@ export default class BattleScene extends Phaser.Scene {
                 this.nextTurn();
             }, 2000);
         } else if (this.currentState === BattleState.EndTurn) {
-            console.log("End Turn - Waiting...");
             if (this.playerHealth <= 0) {
                 console.log("Game Over");
 
                 this.battleHUD?.events.emit("game_over");
+                this.playAnimation(this.character, "Derrota");
 
                 this.currentState = BattleState.FinishScreen;
                 this.nextTurn();
@@ -293,81 +294,74 @@ export default class BattleScene extends Phaser.Scene {
 
     // Logic for the player attack
     playerAttack(): Promise<void> {
-        return new Promise((resolve) => {
-            this.character.anims.timeScale = 0.8;
-            this.character.play({ key: "Ataque" });
+        return new Promise(async (resolve) => {
+            await this.playAnimation(this.character, "Ataque");
 
-            this.character.once("animationcomplete-Ataque", () => {
-                this.enemy1.setTint(0xff0000);
-                setTimeout(() => {
-                    this.enemy1.clearTint();
-                }, 500);
+            this.enemy1.setTint(0xff0000);
+            setTimeout(() => {
+                this.enemy1.clearTint();
+            }, 500);
 
-                // Calculates the damage of the attack
-                let critical = this.isCriticalHit(this.playerCritChance);
-                let totalAtk = this.playerBaseAtk * (critical ? 2 : 1);
+            // Calculates the damage of the attack
+            let critical = this.isCriticalHit(this.playerCritChance);
+            let totalAtk = this.playerBaseAtk * (critical ? 2 : 1);
 
-                // Lowers the enemy health
-                this.enemyHealth = this.enemyHealth - totalAtk;
+            // Lowers the enemy health
+            this.enemyHealth -= totalAtk;
 
-                if (totalAtk > 0) {
-                    this.updateHealthBar(this.enemyHealth, "enemy1");
-                }
+            if (totalAtk > 0) {
+                this.updateHealthBar(this.enemyHealth, "enemy1");
+            }
 
-                if (critical) {
-                    this.showMessage("Critical hit!");
-                    console.log("Critico");
-                }
+            if (critical) {
+                this.showMessage("Critical hit!");
+            }
 
-                this.showTurnText(totalAtk, "player", "attack", "enemy1");
+            this.showTurnText(totalAtk, "player", "attack", "enemy1");
 
-                this.character.play({ key: "Idle_combate", repeat: -1 });
-                this.character.anims.timeScale = 0.3;
+            this.playIdleAnimation(this.character, "Idle_combate");
 
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            });
+            setTimeout(() => {
+                resolve();
+            }, 500);
         });
     }
 
     // Logic for the enemy attack
     enemyAttack(): Promise<void> {
-        return new Promise((resolve) => {
+        return new Promise(async (resolve) => {
             this.enemy1.anims.timeScale = 0.8;
             this.enemy1.play("Ataque_izq");
 
-            this.enemy1.once("animationcomplete-Ataque_izq", () => {
-                this.character.setTint(0xff0000);
-                setTimeout(() => {
-                    this.character.clearTint();
-                }, 500);
+            await this.playAnimation(this.enemy1, "Ataque_izq");
 
-                // Calculates the damage of the attack
-                let critical = this.isCriticalHit(1);
-                let totalAtk = this.enemyBaseAtk * (critical ? 2 : 1);
+            this.character.setTint(0xff0000);
+            setTimeout(() => {
+                this.character.clearTint();
+            }, 500);
 
-                // Lowers the player health
-                this.playerHealth = this.playerHealth - totalAtk;
+            // Calculates the damage of the attack
+            let critical = this.isCriticalHit(1);
+            let totalAtk = this.enemyBaseAtk * (critical ? 2 : 1);
 
-                if (totalAtk > 0) {
-                    this.updateHealthBar(this.playerHealth, "player1");
-                }
+            // Lowers the player health
+            this.playerHealth -= totalAtk;
 
-                if (critical) {
-                    this.showMessage("Critical hit!");
-                    console.log("Critico");
-                }
+            if (totalAtk > 0) {
+                this.updateHealthBar(this.playerHealth, "player1");
+            }
 
-                this.showTurnText(totalAtk, "enemy", "attack", "player");
+            if (critical) {
+                this.showMessage("Critical hit!");
+            }
 
-                this.enemy1.anims.timeScale = 0.3;
-                this.enemy1.play({ key: "Idle_izq", repeat: -1 });
+            this.showTurnText(totalAtk, "enemy", "attack", "player");
 
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            });
+            this.playIdleAnimation(this.enemy1, "Idle_izq");
+
+            setTimeout(() => {
+                resolve();
+            }, 500);
         });
     }
 
@@ -375,13 +369,55 @@ export default class BattleScene extends Phaser.Scene {
     isCriticalHit(critChance: number): Boolean {
         let number = Phaser.Math.Between(1, 10);
 
-        console.log(number);
-
         if (number <= critChance) {
             return true;
         } else {
             return false;
         }
+    }
+
+    // Plays the given animation, if it exists, in the given character
+    // Used for non Idle animation
+    playAnimation(
+        character: GameObjects.Sprite,
+        animName: string
+    ): Promise<void> {
+        return new Promise((resolve) => {
+            if (character.anims.animationManager.get(animName)) {
+                character.anims.timeScale = 0.8;
+                character.play(animName);
+
+                // When the animation is complete restores the default value for the animation duration
+                character.once(`animationcomplete-${animName}`, () => {
+                    character.anims.timeScale = 0.3;
+                    resolve();
+                });
+            } else {
+                // Returns without playing the animation if it doesn't exist
+                console.warn("The animation was not found");
+                resolve();
+            }
+        });
+    }
+
+    // Plays the given animation, if it exists, in the given character
+    // Used for Idle animation
+    playIdleAnimation(
+        character: GameObjects.Sprite,
+        animName: string
+    ): Promise<void> {
+        return new Promise((resolve) => {
+            if (character.anims.animationManager.get(animName)) {
+                character.anims.timeScale = 0.3;
+                character.play({ key: animName, repeat: -1 });
+
+                resolve();
+            } else {
+                // Returns without playing the animation if it doesn't exist
+                console.warn("The animation was not found");
+                resolve();
+            }
+        });
     }
 
     update() {}

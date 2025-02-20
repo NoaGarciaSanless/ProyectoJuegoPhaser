@@ -24,8 +24,6 @@ export default class BattleHUD extends Phaser.Scene {
     // Other scenes
     battleScece: BattleScene;
 
-    static events: any;
-
     // Function to distribute the elements in a container
     arrangeElements(buttons: GameObjects.Sprite[], containerWidth: number) {
         const spacing = 20;
@@ -141,7 +139,6 @@ export default class BattleHUD extends Phaser.Scene {
                         icon: this.add.sprite(0, 0, "icons", 0).setScale(2, 2),
 
                         slider: {
-                            // width: 120, // Fixed width
                             track: this.rexUI.add.roundRectangle(
                                 0,
                                 0,
@@ -186,9 +183,25 @@ export default class BattleHUD extends Phaser.Scene {
             let barToUpdate = this.healthBars[key];
 
             if (barToUpdate) {
-                // Duration of the animation to lower the bars
                 barToUpdate.setValue(cuantity, 0, 100);
                 barToUpdate.text = `${cuantity}HP`;
+
+                // Obtains the slider
+                let slider = barToUpdate.getElement
+                    ? barToUpdate.getElement("slider")
+                    : null;
+
+                // The indicator tha shows the actual amount of health
+                let indicator = slider.getElement
+                    ? slider.getElement("indicator")
+                    : null;
+
+                // If the character has no health hides the indicator to show an empty bar
+                if (cuantity <= 0) {
+                    indicator.setVisible(false);
+                } else {
+                    indicator.setVisible(true);
+                }
             }
         });
 
@@ -287,6 +300,7 @@ export default class BattleHUD extends Phaser.Scene {
             }
         );
 
+        // Resets the container to 0
         this.events.on("clean_text", () => {
             const childrenList = this.textContainer.getAll();
             if (childrenList.length > 1) {
