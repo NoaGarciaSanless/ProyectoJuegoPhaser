@@ -3,6 +3,8 @@ import { GameObjects } from "phaser";
 import Phaser from "phaser";
 import BattleHUD from "./BattleHUD";
 
+import { IInventoryItem } from "../objects/IInventoryItem";
+
 // States of the battle
 enum BattleState {
     PlayerTurn,
@@ -35,6 +37,21 @@ export default class BattleScene extends Phaser.Scene {
     enemyBaseAtk: number = 10;
 
     playerCritChance: number = 3;
+
+    playerBattleInventoryMax: number = 10;
+
+    inventory: Record<string, IInventoryItem> = {
+        potion_sm: {
+            name: "Small Potion",
+            texture: "Vida_sml",
+            quantity: 2,
+            effect: () => {
+                this.playerHealth = Math.min(this.playerHealth + 20, 100);
+                this.updateHealthBar(this.playerHealth, "player1");
+                this.showMessage("You used a Potion!");
+            },
+        },
+    };
 
     constructor() {
         super("BattleScene");
@@ -152,7 +169,7 @@ export default class BattleScene extends Phaser.Scene {
             .setOrigin(0.5, 0.5)
             .setScale(4, 4);
 
-        this.playIdleAnimation(this.character, "Idle_combate")
+        this.playIdleAnimation(this.character, "Idle_combate");
 
         this.time.delayedCall(50, () => {
             this.createHealthBar(
@@ -336,9 +353,11 @@ export default class BattleScene extends Phaser.Scene {
             await this.playAnimation(this.enemy1, "Ataque_izq");
 
             this.character.setTint(0xff0000);
+            await this.playAnimation(this.character, "Dañado");
             setTimeout(() => {
                 this.character.clearTint();
             }, 500);
+            this.playIdleAnimation(this.character, "Idle_combate");
 
             // Calculates the damage of the attack
             let critical = this.isCriticalHit(1);

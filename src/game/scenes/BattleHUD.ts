@@ -5,6 +5,8 @@ import BattleScene from "./BattleScene";
 
 // Plugin to change the color in some text easily
 import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
+import GridTable from "phaser3-rex-plugins/templates/ui/gridtable/GridTable";
+import { IInventoryItem } from "../objects/IInventoryItem";
 
 export default class BattleHUD extends Phaser.Scene {
     rexUI: RexUIPlugin;
@@ -20,6 +22,12 @@ export default class BattleHUD extends Phaser.Scene {
 
     // Health bars
     healthBars: { [key: string]: any } = {};
+
+    // Player inventory
+    playerBattleInventoryMax: number = 0;
+    inventoryList: Record<string, IInventoryItem> = {};
+    inventoryArray: Array<IInventoryItem> = [];
+    inventory: any;
 
     // Other scenes
     battleScece: BattleScene;
@@ -56,6 +64,22 @@ export default class BattleHUD extends Phaser.Scene {
             "icons",
             "assets/UI/iconosUI_phaser.png",
             "assets/UI/iconosUI_phaser.json"
+        );
+
+        this.load.aseprite(
+            "resources",
+            "assets/UI/game_resources/recursos.png",
+            "assets/UI/game_resources/recursos.json"
+        );
+
+        this.load.image(
+            "inventoryBackground",
+            "assets/UI/inventory/inventoryBackground.png"
+        );
+
+        this.load.image(
+            "inventorySlot",
+            "assets/UI/inventory/inventorySlot.png"
         );
     }
 
@@ -100,6 +124,18 @@ export default class BattleHUD extends Phaser.Scene {
         this.arrangeElements(btnList, width);
 
         // Healthbars -----------------------------------------
+
+        // BattleInventory ------------------------------------
+        setTimeout(() => {
+            this.playerBattleInventoryMax =
+                this.battleScece.playerBattleInventoryMax;
+            this.inventoryList = this.battleScece.inventory;
+            this.inventoryArray = Object.values(this.inventoryList);
+
+            console.log(this.inventoryList);
+
+            this.createInventory(width / 2, height / 2);
+        }, 50);
 
         // Events ---------------------------------------------
         // Button functionality
@@ -345,6 +381,100 @@ export default class BattleHUD extends Phaser.Scene {
                 });
             }, 1000);
         });
+    }
+
+    createInventory(x: number, y: number) {
+        // If the player has no inventory, it doesn't create the inventory container
+        if (this.playerBattleInventoryMax <= 0) return;
+
+        const invWidth = 800;
+        const invHeight = 400;
+
+        const columns = 5;
+        const rows = Math.ceil(this.playerBattleInventoryMax / columns);
+        const cellWidth = 150;
+        const cellHeight = 150;
+
+        const totalTableWidth = columns * cellWidth;
+        const totalTableHeight = rows * cellHeight;
+
+        // Padding if there are more than 2 rows
+        const padding = 20;
+
+        this.inventory = this.rexUI.add
+            .gridTable({
+                x,
+                y,
+                width: invWidth,
+                height: invHeight,
+                background: this.add.image(0.5, 0.5, "inventoryBackground"),
+
+                table: {
+                    cellWidth: cellWidth,
+                    cellHeight: cellHeight,
+                    columns: columns,
+                },
+
+                // Centers the table
+                space: {
+                    left: Math.max((invWidth - totalTableWidth) / 2, 0),
+                    right: Math.max((invWidth - totalTableWidth) / 2, 0),
+                    top: Math.max((invHeight - totalTableHeight) / 2, padding),
+                    bottom: Math.max(
+                        (invHeight - totalTableHeight) / 2,
+                        padding
+                    ),
+                },
+
+                items: new Array(this.playerBattleInventoryMax).fill(null),
+
+                createCellContainerCallback: function (
+                    cell: {
+                        index: any;
+                        scene: any;
+                        width: number;
+                        height: number;
+                    },
+                    cellContainer
+                ) {
+                    const scene = cell.scene,
+                        width = cell.width,
+                        height = cell.height,
+                        index = cell.index;
+
+                    const item = scene.inventoryArray[index];
+
+                    if (cellContainer === null) {
+                        cellContainer = scene.add.container({
+                            width: width,
+                            height: height,
+                        });
+
+                        const slotImage = scene.add
+                            .image(0, 0, "inventorySlot")
+                            .setDisplaySize(width * 0.8, height * 0.8)
+                            .setOrigin(0.5);
+
+                        slotImage.setPosition(width * 0.5, height * 0.5);
+
+                        cellContainer?.add(slotImage);
+
+                        if (item) {
+                            const itemImage = scene.add
+                                .sprite(0, 0, "resources", item.texture)
+                                .setDisplaySize(width * 0.6, height * 0.6)
+                                .setOrigin(0.5);
+
+                            itemImage.setPosition(width * 0.5, height * 0.5);
+
+                            cellContainer?.add(itemImage);
+                        }
+                    }
+
+                    return cellContainer;
+                },
+            })
+            .layout();
     }
 
     update() {}
