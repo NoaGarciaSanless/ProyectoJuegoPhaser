@@ -1,11 +1,10 @@
-import { GameObjects } from "phaser";
+import { GameObjects, RIGHT } from "phaser";
 
 import Phaser from "phaser";
 import BattleScene from "./BattleScene";
 
 // Plugin to change the color in some text easily
 import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
-import GridTable from "phaser3-rex-plugins/templates/ui/gridtable/GridTable";
 import { IInventoryItem } from "../objects/IInventoryItem";
 
 export default class BattleHUD extends Phaser.Scene {
@@ -30,7 +29,7 @@ export default class BattleHUD extends Phaser.Scene {
     inventory: any;
 
     // Other scenes
-    battleScece: BattleScene;
+    battleScene: BattleScene;
 
     // Function to distribute the elements in a container
     arrangeElements(buttons: GameObjects.Sprite[], containerWidth: number) {
@@ -72,6 +71,8 @@ export default class BattleHUD extends Phaser.Scene {
             "assets/UI/game_resources/recursos.json"
         );
 
+        this.load.image("backbutton", "assets/buttons/back.png");
+
         this.load.image(
             "inventoryBackground",
             "assets/UI/inventory/inventoryBackground.png"
@@ -87,7 +88,7 @@ export default class BattleHUD extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // Other scenes
-        this.battleScece = this.scene.get("BattleScene") as BattleScene;
+        this.battleScene = this.scene.get("BattleScene") as BattleScene;
 
         // Variables to control buttons
         let canAttack = true;
@@ -128,11 +129,9 @@ export default class BattleHUD extends Phaser.Scene {
         // BattleInventory ------------------------------------
         setTimeout(() => {
             this.playerBattleInventoryMax =
-                this.battleScece.playerBattleInventoryMax;
-            this.inventoryList = this.battleScece.inventory;
+                this.battleScene.playerBattleInventoryMax;
+            this.inventoryList = this.battleScene.inventory;
             this.inventoryArray = Object.values(this.inventoryList);
-
-            console.log(this.inventoryList);
 
             this.createInventory(width / 2, height / 2);
         }, 50);
@@ -145,7 +144,7 @@ export default class BattleHUD extends Phaser.Scene {
                 this.atkBTN.setFrame(1);
 
                 // Activates the attack in the BattleScene
-                this.battleScece.events.emit("character-attack");
+                this.battleScene.events.emit("character-attack");
                 canAttack = false;
             }
         });
@@ -215,12 +214,12 @@ export default class BattleHUD extends Phaser.Scene {
         );
 
         // Updates the characters health bar
-        this.events.on("update_health_bar", (cuantity: number, key: string) => {
+        this.events.on("update_health_bar", (quantity: number, key: string) => {
             let barToUpdate = this.healthBars[key];
 
             if (barToUpdate) {
-                barToUpdate.setValue(cuantity, 0, 100);
-                barToUpdate.text = `${cuantity}HP`;
+                barToUpdate.setValue(quantity, 0, 100);
+                barToUpdate.text = `${quantity}HP`;
 
                 // Obtains the slider
                 let slider = barToUpdate.getElement
@@ -233,7 +232,7 @@ export default class BattleHUD extends Phaser.Scene {
                     : null;
 
                 // If the character has no health hides the indicator to show an empty bar
-                if (cuantity <= 0) {
+                if (quantity <= 0) {
                     indicator.setVisible(false);
                 } else {
                     indicator.setVisible(true);
@@ -277,7 +276,7 @@ export default class BattleHUD extends Phaser.Scene {
         this.events.on(
             "show_text",
             (
-                cuantity: number,
+                quantity: number,
                 character: string,
                 action: string,
                 target?: string
@@ -285,7 +284,7 @@ export default class BattleHUD extends Phaser.Scene {
                 let messageText = "";
 
                 if (action === "showTurn") {
-                    messageText = `Turn ${cuantity}`;
+                    messageText = `Turn ${quantity}`;
 
                     let message = this.rexUI.add.BBCodeText(0, 0, messageText, {
                         fontFamily: "MyCustomFont",
@@ -309,7 +308,7 @@ export default class BattleHUD extends Phaser.Scene {
                         messageText += `The [color=red]${character}[/color] `;
                     }
 
-                    messageText += `has dealt  [color=yellow]${cuantity} damage[/color]  `;
+                    messageText += `has dealt  [color=yellow]${quantity} damage[/color]  `;
 
                     if (target == "player") {
                         messageText += `to [color=green]${target}[/color] `;
@@ -387,8 +386,10 @@ export default class BattleHUD extends Phaser.Scene {
         // If the player has no inventory, it doesn't create the inventory container
         if (this.playerBattleInventoryMax <= 0) return;
 
+        const scrollMode = 0;
+
         const invWidth = 800;
-        const invHeight = 400;
+        const invHeight = 500;
 
         const columns = 5;
         const rows = Math.ceil(this.playerBattleInventoryMax / columns);
@@ -401,6 +402,10 @@ export default class BattleHUD extends Phaser.Scene {
         // Padding if there are more than 2 rows
         const padding = 20;
 
+        // Other elements
+        let inventoryHeader = this.createInventoryHeader(invWidth, invHeight);
+
+        // Inventory
         this.inventory = this.rexUI.add
             .gridTable({
                 x,
@@ -408,6 +413,8 @@ export default class BattleHUD extends Phaser.Scene {
                 width: invWidth,
                 height: invHeight,
                 background: this.add.image(0.5, 0.5, "inventoryBackground"),
+
+                scrollMode: scrollMode,
 
                 table: {
                     cellWidth: cellWidth,
@@ -419,14 +426,20 @@ export default class BattleHUD extends Phaser.Scene {
                 space: {
                     left: Math.max((invWidth - totalTableWidth) / 2, 0),
                     right: Math.max((invWidth - totalTableWidth) / 2, 0),
-                    top: Math.max((invHeight - totalTableHeight) / 2, padding),
-                    bottom: Math.max(
-                        (invHeight - totalTableHeight) / 2,
-                        padding
-                    ),
+                    top: padding,
+                    bottom: padding,
+                    header: 100,
+                },
+
+                mouseWheelScroller: {
+                    focus: false,
+                    speed: 0.1,
                 },
 
                 items: new Array(this.playerBattleInventoryMax).fill(null),
+
+                //https://codepen.io/rexrainbow/pen/pooZWme?editors=0010
+                header: inventoryHeader,
 
                 createCellContainerCallback: function (
                     cell: {
@@ -445,10 +458,7 @@ export default class BattleHUD extends Phaser.Scene {
                     const item = scene.inventoryArray[index];
 
                     if (cellContainer === null) {
-                        cellContainer = scene.add.container({
-                            width: width,
-                            height: height,
-                        });
+                        cellContainer = scene.add.container(0, 0);
 
                         const slotImage = scene.add
                             .image(0, 0, "inventorySlot")
@@ -468,6 +478,19 @@ export default class BattleHUD extends Phaser.Scene {
                             itemImage.setPosition(width * 0.5, height * 0.5);
 
                             cellContainer?.add(itemImage);
+
+                            const itemText = scene.rexUI.add.BBCodeText(
+                                width - 50,
+                                height / 1.5,
+                                item.quantity,
+                                {
+                                    fontFamily: "MyCustomFont",
+                                    fontSize: "32px",
+                                    color: "#000000",
+                                }
+                            );
+
+                            cellContainer?.add(itemText);
                         }
                     }
 
@@ -475,6 +498,19 @@ export default class BattleHUD extends Phaser.Scene {
                 },
             })
             .layout();
+    }
+
+    createInventoryHeader(width: number, height: number) {
+        let backBTN = this.add
+            .image(width / 2 - 50, 80, "backbutton")
+            .setDisplaySize(90, 80)
+            .setOrigin(1, 0.9);
+
+        let inventoryHeader = this.add.container(0, 0);
+        inventoryHeader.add([backBTN]);
+        inventoryHeader.setDepth(10);
+
+        return inventoryHeader;
     }
 
     update() {}
