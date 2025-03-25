@@ -18,6 +18,7 @@ export default class BattleHUD extends Phaser.Scene {
     // Buttons
     atkBTN: GameObjects.Sprite;
     defBTN: GameObjects.Sprite;
+    invBTN: GameObjects.Sprite;
 
     // Health bars
     healthBars: { [key: string]: any } = {};
@@ -30,6 +31,10 @@ export default class BattleHUD extends Phaser.Scene {
 
     // Other scenes
     battleScene: BattleScene;
+
+    // Variables to control buttons
+    canAttack = true;
+    invOpen = false;
 
     // Function to distribute the elements in a container
     arrangeElements(buttons: GameObjects.Sprite[], containerWidth: number) {
@@ -90,9 +95,6 @@ export default class BattleHUD extends Phaser.Scene {
         // Other scenes
         this.battleScene = this.scene.get("BattleScene") as BattleScene;
 
-        // Variables to control buttons
-        let canAttack = true;
-
         this.textContainer = this.add.container(width / 2, 0);
 
         const bgWidth = width / 2;
@@ -109,7 +111,7 @@ export default class BattleHUD extends Phaser.Scene {
         this.buttonContainer = this.add.container(width / 2, height - 100);
 
         this.atkBTN = this.add
-            .sprite(0, 0, "buttons", "0")
+            .sprite(0, 0, "buttons", 0)
             .setOrigin(0.5, 0.5)
             .setDisplaySize(width / 10, height / 10);
         this.atkBTN.setInteractive();
@@ -118,9 +120,16 @@ export default class BattleHUD extends Phaser.Scene {
             .sprite(0, 0, "buttons", 2)
             .setOrigin(0.5, 0.5)
             .setDisplaySize(width / 10, height / 10);
+        this.defBTN.setInteractive();
+
+        this.invBTN = this.add
+            .sprite(0, 0, "buttons", 4)
+            .setOrigin(0.5, 0.5)
+            .setDisplaySize(width / 10, height / 10);
+        this.invBTN.setInteractive();
 
         // Adds the buttons to the container
-        let btnList = [this.atkBTN, this.defBTN];
+        let btnList = [this.atkBTN, this.defBTN, this.invBTN];
         this.buttonContainer.add(btnList);
         this.arrangeElements(btnList, width);
 
@@ -140,12 +149,12 @@ export default class BattleHUD extends Phaser.Scene {
         // Button functionality
         this.atkBTN.on("pointerdown", () => {
             // If the player can attack, plays the character attack animation
-            if (canAttack) {
+            if (this.canAttack) {
                 this.atkBTN.setFrame(1);
 
                 // Activates the attack in the BattleScene
                 this.battleScene.events.emit("character-attack");
-                canAttack = false;
+                this.canAttack = false;
             }
         });
 
@@ -153,91 +162,36 @@ export default class BattleHUD extends Phaser.Scene {
             this.atkBTN.setFrame(0);
         });
 
+        this.invBTN.on("pointerdown", () => {
+            this.invBTN.setFrame(5);
+            this.toggleInventory();
+        });
+
+        this.invBTN.on("pointerup", () => {
+            this.invBTN.setFrame(4);
+        });
+
+        // --------------------------------------------------------
+
         this.events.on("allow-attack", () => {
-            canAttack = true;
+            this.canAttack = true;
         });
 
         this.events.on("cancel-attack", () => {
-            canAttack = false;
+            this.canAttack = false;
         });
 
         // Characters health bars
         this.events.on(
             "create_health_bar",
             (posX: number, posY: number, health: number, key: string) => {
-                let newHealthBar = this.rexUI.add
-                    .numberBar({
-                        x: posX,
-                        y: posY + 115,
-                        width: 300,
-                        height: 20,
-                        icon: this.add.sprite(0, 0, "icons", 0).setScale(2, 2),
-
-                        slider: {
-                            track: this.rexUI.add.roundRectangle(
-                                0,
-                                0,
-                                0,
-                                0,
-                                10,
-                                0x414040
-                            ),
-                            indicator: this.rexUI.add.roundRectangle(
-                                0,
-                                0,
-                                0,
-                                0,
-                                10,
-                                0xff1a1a
-                            ),
-                        },
-                        text: this.add.text(0, 0, `${health}HP`, {
-                            fontFamily: "MyCustomFont",
-                            fontSize: "16px",
-                            color: "#000",
-                        }),
-                        space: {
-                            left: 10,
-                            right: 10,
-                            top: 10,
-                            bottom: 10,
-                            icon: 10,
-                            slider: 10,
-                        },
-                    })
-                    .layout();
-
-                this.add.existing(newHealthBar);
-                newHealthBar.setValue(health, 0, health);
-                this.healthBars[key] = newHealthBar;
+                this.createHealthBar(posX, posY, health, key);
             }
         );
 
         // Updates the characters health bar
         this.events.on("update_health_bar", (quantity: number, key: string) => {
-            let barToUpdate = this.healthBars[key];
-
-            if (barToUpdate) {
-                barToUpdate.setValue(quantity, 0, 100);
-                barToUpdate.text = `${quantity}HP`;
-
-                // Obtains the slider
-                let slider = barToUpdate.getElement
-                    ? barToUpdate.getElement("slider")
-                    : null;
-
-                // The indicator tha shows the actual amount of health
-                let indicator = slider.getElement
-                    ? slider.getElement("indicator")
-                    : null;
-
-                // If the character has no health hides the indicator to show an empty bar
-                if (quantity <= 0) {
-                    indicator.setVisible(false);
-                } else {
-                    indicator.setVisible(true);
-                }
-            }
+            this.updateHealthBar(quantity, key);
         });
 
         // Victory GameOver Texts
@@ -281,57 +235,7 @@ export default class BattleHUD extends Phaser.Scene {
                 action: string,
                 target?: string
             ) => {
-                let messageText = "";
-
-                if (action === "showTurn") {
-                    messageText = `Turn ${quantity}`;
-
-                    let message = this.rexUI.add.BBCodeText(0, 0, messageText, {
-                        fontFamily: "MyCustomFont",
-                        fontSize: "32px",
-                        color: "#ffffff",
-                    });
-
-                    this.textContainer.add(message);
-                    message.setOrigin(0.5, 0.5);
-
-                    message.x = 0;
-                    message.y = 25;
-
-                    return;
-                }
-
-                if (action === "attack") {
-                    if (character == "player") {
-                        messageText += `The [color=green]${character}[/color] `;
-                    } else {
-                        messageText += `The [color=red]${character}[/color] `;
-                    }
-
-                    messageText += `has dealt  [color=yellow]${quantity} damage[/color]  `;
-
-                    if (target == "player") {
-                        messageText += `to [color=green]${target}[/color] `;
-                    } else {
-                        messageText += `to [color=red]${target}[/color] `;
-                    }
-                }
-
-                let message = this.rexUI.add.BBCodeText(0, 0, messageText, {
-                    fontFamily: "MyCustomFont",
-                    fontSize: "24px",
-                    color: "#ffffff",
-                });
-
-                // Adds the text to the container and centers it in the container
-                this.textContainer.add(message);
-                message.setOrigin(0.5, 0.5);
-
-                console.log(this.textContainer.length);
-
-                let totalMessages = this.textContainer.length - 2;
-
-                message.y = 40 + totalMessages * 40;
+                this.showTurnText(quantity, character, action, target);
             }
         );
 
@@ -381,6 +285,10 @@ export default class BattleHUD extends Phaser.Scene {
             }, 1000);
         });
     }
+
+    // Functions **********************************************
+
+    // Inventory --------------------
 
     createInventory(x: number, y: number) {
         // If the player has no inventory, it doesn't create the inventory container
@@ -466,7 +374,7 @@ export default class BattleHUD extends Phaser.Scene {
                             .setOrigin(0.5);
 
                         slotImage.setPosition(width * 0.5, height * 0.5);
-
+                        slotImage.name = "slotBackground";
                         cellContainer?.add(slotImage);
 
                         if (item) {
@@ -476,7 +384,7 @@ export default class BattleHUD extends Phaser.Scene {
                                 .setOrigin(0.5);
 
                             itemImage.setPosition(width * 0.5, height * 0.5);
-
+                            itemImage.name = "itemImage";
                             cellContainer?.add(itemImage);
 
                             const itemText = scene.rexUI.add.BBCodeText(
@@ -489,8 +397,36 @@ export default class BattleHUD extends Phaser.Scene {
                                     color: "#000000",
                                 }
                             );
-
+                            itemText.name = "itemText";
                             cellContainer?.add(itemText);
+
+                            // Add a transparent overlay as the topmost layer
+                            const clickOverlay = scene.add.rectangle(
+                                width * 0.5,
+                                height * 0.5,
+                                width,
+                                height,
+                                0x000000,
+                                0
+                            );
+                            clickOverlay.setInteractive();
+                            clickOverlay.setDepth(10);
+                            clickOverlay.name = "clickOverlay";
+
+                            clickOverlay.on("pointerdown", () => {
+                                scene.battleScene.events.emit("use-item", item);
+
+                                let itemTextChild = cellContainer?.list.find(
+                                    (child) => child.name === "itemText"
+                                );
+
+                                itemTextChild.setText(item.quantity.toString());
+
+                                scene.toggleInventory();
+                                scene.invBTN.setFrame(4);
+                            });
+
+                            cellContainer?.add(clickOverlay);
                         }
                     }
 
@@ -498,6 +434,8 @@ export default class BattleHUD extends Phaser.Scene {
                 },
             })
             .layout();
+
+        this.inventory.setVisible(false);
     }
 
     createInventoryHeader(width: number, height: number) {
@@ -506,11 +444,188 @@ export default class BattleHUD extends Phaser.Scene {
             .setDisplaySize(90, 80)
             .setOrigin(1, 0.9);
 
+        backBTN.setInteractive();
+
+        backBTN.on("pointerdown", () => {
+            this.toggleInventory();
+            this.invBTN.setFrame(4);
+        });
+
         let inventoryHeader = this.add.container(0, 0);
         inventoryHeader.add([backBTN]);
         inventoryHeader.setDepth(10);
 
         return inventoryHeader;
+    }
+
+    // Shows the inventory and makes the rest of the elements no interactive
+    toggleInventory() {
+        if (this.inventory) {
+            this.inventory.setVisible(!this.inventory.visible);
+            this.invOpen = !this.invOpen;
+
+            // Allows to use other buttons
+            if (this.invOpen) {
+                this.atkBTN.disableInteractive();
+                this.defBTN.disableInteractive();
+                this.invBTN.disableInteractive();
+            } else {
+                this.atkBTN.setInteractive();
+                this.defBTN.setInteractive();
+                this.invBTN.setInteractive();
+            }
+        }
+    }
+
+    refreshInventory() {}
+
+    // Turn texts -------------------
+    showTurnText(
+        quantity: number,
+        character: string,
+        action: string,
+        target?: string
+    ) {
+        let messageText = "";
+
+        if (action === "showTurn") {
+            messageText = `Turn ${quantity}`;
+
+            let message = this.rexUI.add.BBCodeText(0, 0, messageText, {
+                fontFamily: "MyCustomFont",
+                fontSize: "32px",
+                color: "#ffffff",
+            });
+
+            this.textContainer.add(message);
+            message.setOrigin(0.5, 0.5);
+
+            message.x = 0;
+            message.y = 25;
+
+            return;
+        }
+
+        if (action === "attack") {
+            if (character == "player") {
+                messageText += `The [color=green]${character}[/color] `;
+            } else {
+                messageText += `The [color=red]${character}[/color] `;
+            }
+
+            messageText += `has dealt  [color=yellow]${quantity} damage[/color]  `;
+
+            if (target == "player") {
+                messageText += `to [color=green]${target}[/color] `;
+            } else {
+                messageText += `to [color=red]${target}[/color] `;
+            }
+        } else if (action === "heal") {
+            if (character == "player") {
+                messageText += `The [color=green]${character}[/color] `;
+            } else {
+                messageText += `The [color=red]${character}[/color] `;
+            }
+
+            messageText += `has recovered  [color=yellow]${quantity} health[/color]  `;
+        } else if (action === "miss") {
+            if (character == "player") {
+                messageText += `The [color=green]${character}[/color] `;
+            } else {
+                messageText += `The [color=red]${character}[/color] `;
+            }
+
+            messageText += `has missed an attack`;
+        }
+
+        let message = this.rexUI.add.BBCodeText(0, 0, messageText, {
+            fontFamily: "MyCustomFont",
+            fontSize: "24px",
+            color: "#ffffff",
+        });
+
+        // Adds the text to the container and centers it in the container
+        this.textContainer.add(message);
+        message.setOrigin(0.5, 0.5);
+
+        let totalMessages = this.textContainer.length - 2;
+
+        message.y = 40 + totalMessages * 40;
+    }
+
+    // Health bars ------------------
+    createHealthBar(posX: number, posY: number, health: number, key: string) {
+        let newHealthBar = this.rexUI.add
+            .numberBar({
+                x: posX,
+                y: posY + 115,
+                width: 300,
+                height: 20,
+                icon: this.add.sprite(0, 0, "icons", 0).setScale(2, 2),
+
+                slider: {
+                    track: this.rexUI.add.roundRectangle(
+                        0,
+                        0,
+                        0,
+                        0,
+                        10,
+                        0x414040
+                    ),
+                    indicator: this.rexUI.add.roundRectangle(
+                        0,
+                        0,
+                        0,
+                        0,
+                        10,
+                        0xff1a1a
+                    ),
+                },
+                text: this.add.text(0, 0, `${health}HP`, {
+                    fontFamily: "MyCustomFont",
+                    fontSize: "16px",
+                    color: "#000",
+                }),
+                space: {
+                    left: 10,
+                    right: 10,
+                    top: 10,
+                    bottom: 10,
+                    icon: 10,
+                    slider: 10,
+                },
+            })
+            .layout();
+
+        this.add.existing(newHealthBar);
+        newHealthBar.setValue(health, 0, health);
+        this.healthBars[key] = newHealthBar;
+    }
+
+    updateHealthBar(quantity: number, key: string) {
+        let barToUpdate = this.healthBars[key];
+
+        if (barToUpdate) {
+            barToUpdate.setValue(quantity, 0, 100);
+            barToUpdate.text = `${quantity}HP`;
+
+            // Obtains the slider
+            let slider = barToUpdate.getElement
+                ? barToUpdate.getElement("slider")
+                : null;
+
+            // The indicator tha shows the actual amount of health
+            let indicator = slider.getElement
+                ? slider.getElement("indicator")
+                : null;
+
+            // If the character has no health hides the indicator to show an empty bar
+            if (quantity <= 0) {
+                indicator.setVisible(false);
+            } else {
+                indicator.setVisible(true);
+            }
+        }
     }
 
     update() {}

@@ -37,6 +37,7 @@ export default class BattleScene extends Phaser.Scene {
     enemyBaseAtk: number = 10;
 
     playerCritChance: number = 3;
+    playerMissChance: number = 3;
 
     playerBattleInventoryMax: number = 10;
 
@@ -46,12 +47,24 @@ export default class BattleScene extends Phaser.Scene {
             texture: "Vida_sml",
             quantity: 2,
             effect: () => {
-                this.playerHealth = Math.min(this.playerHealth + 20, 100);
-                this.updateHealthBar(this.playerHealth, "player1");
-                this.showMessage("You used a Potion!");
+                if (this.inventory["potion_sm"].quantity > 0) {
+                    this.playerHealth = Math.min(this.playerHealth + 20, 100);
+                    this.updateHealthBar(this.playerHealth, "player1");
+                    this.showTurnText(20, "player", "heal");
+
+                    this.inventory["potion_sm"].quantity--;
+
+                    this.battleHUD!.events.emit("refresh-inventory");
+
+                    this.currentState = BattleState.EndTurn;
+                    this.nextTurn();
+                }
             },
         },
     };
+
+    // Enemy variables
+    enemyMissChance: number = 3;
 
     constructor() {
         super("BattleScene");
@@ -193,6 +206,11 @@ export default class BattleScene extends Phaser.Scene {
             this.currentState = BattleState.EndTurn;
             this.nextTurn();
         });
+
+        // Character uses an item
+        this.events.on("use-item", (item: IInventoryItem) => {
+            item.effect();
+        });
     }
 
     // Function to control the turn logic
@@ -313,79 +331,94 @@ export default class BattleScene extends Phaser.Scene {
     playerAttack(): Promise<void> {
         return new Promise(async (resolve) => {
             await this.playAnimation(this.character, "Ataque");
-
-            this.enemy1.setTint(0xff0000);
-            setTimeout(() => {
-                this.enemy1.clearTint();
-            }, 500);
-
-            // Calculates the damage of the attack
-            let critical = this.isCriticalHit(this.playerCritChance);
-            let totalAtk = this.playerBaseAtk * (critical ? 2 : 1);
-
-            // Lowers the enemy health
-            this.enemyHealth -= totalAtk;
-
-            if (totalAtk > 0) {
-                this.updateHealthBar(this.enemyHealth, "enemy1");
-            }
-
-            if (critical) {
-                this.showMessage("Critical hit!");
-            }
-
-            this.showTurnText(totalAtk, "player", "attack", "enemy1");
-
             this.playIdleAnimation(this.character, "Idle_combate");
 
-            setTimeout(() => {
-                resolve();
-            }, 500);
+            let miss = this.calculateChance(this.playerMissChance);
+
+            if (miss) {
+                this.showTurnText(0, "player", "miss", "enemy1");
+
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            } else {
+                this.enemy1.setTint(0xff0000);
+                setTimeout(() => {
+                    this.enemy1.clearTint();
+                }, 500);
+
+                // Calculates the damage of the attack
+                let critical = this.calculateChance(this.playerCritChance);
+                let totalAtk = this.playerBaseAtk * (critical ? 2 : 1);
+
+                // Lowers the enemy health
+                this.enemyHealth -= totalAtk;
+
+                if (totalAtk > 0) {
+                    this.updateHealthBar(this.enemyHealth, "enemy1");
+                }
+
+                if (critical) {
+                    this.showMessage("Critical hit!");
+                }
+
+                this.showTurnText(totalAtk, "player", "attack", "enemy1");
+
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            }
         });
     }
 
     // Logic for the enemy attack
     enemyAttack(): Promise<void> {
         return new Promise(async (resolve) => {
-            this.enemy1.anims.timeScale = 0.8;
-            this.enemy1.play("Ataque_izq");
-
             await this.playAnimation(this.enemy1, "Ataque_izq");
-
-            this.character.setTint(0xff0000);
-            await this.playAnimation(this.character, "Dañado");
-            setTimeout(() => {
-                this.character.clearTint();
-            }, 500);
-            this.playIdleAnimation(this.character, "Idle_combate");
-
-            // Calculates the damage of the attack
-            let critical = this.isCriticalHit(1);
-            let totalAtk = this.enemyBaseAtk * (critical ? 2 : 1);
-
-            // Lowers the player health
-            this.playerHealth -= totalAtk;
-
-            if (totalAtk > 0) {
-                this.updateHealthBar(this.playerHealth, "player1");
-            }
-
-            if (critical) {
-                this.showMessage("Critical hit!");
-            }
-
-            this.showTurnText(totalAtk, "enemy", "attack", "player");
-
             this.playIdleAnimation(this.enemy1, "Idle_izq");
 
-            setTimeout(() => {
-                resolve();
-            }, 500);
+            let miss = this.calculateChance(this.playerMissChance);
+
+            if (miss) {
+                this.showTurnText(0, "enemy", "miss", "player");
+
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            } else {
+                this.character.setTint(0xff0000);
+                await this.playAnimation(this.character, "Dañado");
+                setTimeout(() => {
+                    this.character.clearTint();
+                }, 500);
+                this.playIdleAnimation(this.character, "Idle_combate");
+
+                // Calculates the damage of the attack
+                let critical = this.calculateChance(1);
+                let totalAtk = this.enemyBaseAtk * (critical ? 2 : 1);
+
+                // Lowers the player health
+                this.playerHealth -= totalAtk;
+
+                if (totalAtk > 0) {
+                    this.updateHealthBar(this.playerHealth, "player1");
+                }
+
+                if (critical) {
+                    this.showMessage("Critical hit!");
+                }
+
+                this.showTurnText(totalAtk, "enemy", "attack", "player");
+
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            }
         });
     }
 
     // Tells if the attack is critical or not
-    isCriticalHit(critChance: number): Boolean {
+    calculateChance(critChance: number): Boolean {
         let number = Phaser.Math.Between(1, 10);
 
         if (number <= critChance) {
@@ -403,7 +436,7 @@ export default class BattleScene extends Phaser.Scene {
     ): Promise<void> {
         return new Promise((resolve) => {
             if (character.anims.animationManager.get(animName)) {
-                character.anims.timeScale = 0.8;
+                character.anims.timeScale = 1;
                 character.play(animName);
 
                 // When the animation is complete restores the default value for the animation duration
