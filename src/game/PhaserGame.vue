@@ -27,19 +27,19 @@ defineExpose({ scene, game });
 </script>
 
 <style scoped>
-.game-wrapper {
+/* .game-wrapper {
     display: flex;
-    width: 100vw;    /* Usamos el 100% del ancho de la pantalla */
-    height: 100vh;   /* Usamos el 100% de la altura de la pantalla */
-}
+    width: 100vw;    
+    height: 100vh;   
+} */
 
-.game-container {
-    width: 50vw;     /* 50% del ancho de la pantalla */
-    height: 100vh;   /* 100% de la altura de la pantalla */
-    background-color: #000; /* El color de fondo para que se vea bien el juego */
-    position: relative; /* Asegurarse de que esté posicionado correctamente */
-    z-index: 1;        /* El juego estará sobre los componentes Vue */
-}
+/* .game-container {
+    width: 50vw;     
+    height: 100vh;   
+    background-color: #000; 
+    position: relative; 
+    z-index: 1;       
+} */
 
 .vue-components {
     width: 50vw;      /* La otra mitad del ancho para los componentes Vue */
@@ -57,11 +57,6 @@ defineExpose({ scene, game });
 
 <template>
     <div class="game-wrapper">
-        <div id="game-container" class="game-container"></div>
-        <div class="vue-components">
-            <!-- Aquí van tus otros componentes de Vue -->
-            <p>Componente 1</p>
-            <p>Componente 2</p>
-        </div>
+        <div id="game-container" ></div>
     </div>
 </template>

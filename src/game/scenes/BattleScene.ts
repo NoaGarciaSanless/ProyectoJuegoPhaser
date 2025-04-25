@@ -39,7 +39,7 @@ export default class BattleScene extends Phaser.Scene {
     playerCritChance: number = 3;
     playerMissChance: number = 3;
 
-    playerBattleInventoryMax: number = 10;
+    playerBattleInventoryMax: number = 20;
 
     inventory: Record<string, IInventoryItem> = {
         potion_sm: {
