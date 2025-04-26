@@ -1,43 +1,129 @@
 // Registrarse en firebase
 
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+} from "firebase/auth";
 import { auth, db } from "./ConexionFirebase";
 import { UsuarioDTO } from "../DTOs/UsuarioDTO";
-import {  collection, doc, setDoc } from "firebase/firestore";
+import {
+    collection,
+    doc,
+    getDocs,
+    or,
+    query,
+    setDoc,
+    where,
+} from "firebase/firestore";
 
-export function registrarUsuario(nombre: string, correo: string, contrasenha: string) {
-    createUserWithEmailAndPassword(auth, correo, contrasenha)
-        .then(async (credenciales) => {
-            console.log(credenciales.user);
+// Registra un usuario comprobando que no exista otro con estas credenciales
+export function registrarUsuario(
+    nombre: string,
+    correo: string,
+    contrasenha: string
+) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Realiza una consulta para saber si hay un usuario con estas credenciales
+            let tabla = collection(db, "usuarios");
+            let consulta = query(tabla, where("nombre", "==", nombre));
+            let resultado = await getDocs(consulta);
 
-            let nuevoUsuario = new UsuarioDTO(credenciales.user.uid, nombre, correo, contrasenha);
+            if (!resultado.empty) {
+                // Obtinen los datos del usuario exitente
+                const usuarioNombre = resultado.docs[0].data().nombre;
 
-            const docRef = doc(db, "usuarios", nuevoUsuario.id);
+                // Si el usuario introducido es igual al recuperado manda un mensaje de usuario ya registrado
+                if (usuarioNombre == nombre) {
+                    throw new Error("Nombre de usuario ya en uso");
+                }
+            }
 
-            await setDoc(docRef, nuevoUsuario.toPlainObject());
+            createUserWithEmailAndPassword(auth, correo, contrasenha)
+                .then(async (credenciales) => {
+                    // Crea un DTO para el nuevo usuario
+                    let nuevoUsuario = new UsuarioDTO(
+                        credenciales.user.uid,
+                        nombre,
+                        correo,
+                        "usuario"
+                    );
 
-        })
-        .catch((error) => {
-            console.log(error.code);
-            console.log(error.message);
-        })
+                    // Guarda el usuario en FireStore
+                    const docRef = doc(db, "usuarios", nuevoUsuario.id);
+                    await setDoc(docRef, nuevoUsuario.aObjetoJS());
+
+                    resolve("Ok");
+                })
+                .catch((error) => {
+                    console.log(error.code);
+                    let mensajeError = "";
+
+                    if (error.code === "auth/email-already-in-use") {
+                        mensajeError = "Este correo ya esta siendo utilizado";
+                    }
+
+                    if (error.code === "auth/invalid-email") {
+                        mensajeError = "Este correo no es válido";
+                    }
+
+                    if (error.code === "auth/weak-password") {
+                        mensajeError = "La contraseña es demasiado débil";
+                    }
+
+                    throw new Error(mensajeError);
+                });
+        } catch (error: any) {
+            reject(error);
+        }
+    });
 }
 
-export function iniciarSesionConUsuario(nombre: string, correo: string, contrasenha: string) {
-    return new Promise((resolve, reject) => {
-        signInWithEmailAndPassword(auth, correo, contrasenha)
-            .then((credenciales) => {
-                console.log(credenciales.user);
-                console.log("Usuario ha iniciado sesión");
+// Permite al usuario iniciar sesión con correo o nombre de usuario
+export function iniciarSesionConUsuario(login: string, contrasenha: string) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            // Realiza una consulta para saber si hay un usuario con este nombre o correo
+            let correo = login;
 
+            // Si el login contiene @ consulta la propiedad 'correo' y si no la de usuario
+            if (!login.includes("@")) {
+                const tabla = collection(db, "usuarios");
+                const consulta = query(tabla, where("nombre", "==", login));
+                const resultado = await getDocs(consulta);
 
-                resolve(credenciales.user);
-            })
-            .catch((error) => {
-                console.log(error.code);
-                console.log(error.message);
-                reject(error.code);
-            })
-    })
+                if (resultado.empty) {
+                    throw new Error(
+                        "Usuario con estas credenciales no encontrado"
+                    );
+                }
 
+                const usuario = resultado.docs[0];
+                correo = usuario.data().correo;
+            }
+
+            signInWithEmailAndPassword(auth, correo, contrasenha)
+                .then((credenciales) => {
+                    console.log(credenciales.user);
+                    console.log("Usuario ha iniciado sesión");
+
+                    resolve(credenciales.user);
+                })
+                .catch((error) => {
+                    console.log(error.code);
+                    console.log(error.message);
+
+                    if (error === "auth/invalid-email") {
+                        throw new Error("Correo no encontrado");
+                    }
+                    if (error === "auth/invalid-credential") {
+                        throw new Error(
+                            "Datos incorrectos para iniciar sesión"
+                        );
+                    }
+                });
+        } catch (error: any) {
+            reject(error);
+        }
+    });
 }

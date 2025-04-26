@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import { ref, toRaw } from 'vue';
 
 
-import PhaserGame from './game/PhaserGame.vue';
+import PhaserGame from './juego/PhaserGame.vue';
 import LoginComponente from './componentes-info/Login-componente.vue';
 
 

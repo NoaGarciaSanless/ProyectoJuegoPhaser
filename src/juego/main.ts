@@ -1,6 +1,6 @@
 import { AUTO, Game } from "phaser";
-import BattleScene from "./scenes/BattleScene";
-import BattleHUD from "./scenes/BattleHUD";
+import EscenaBatalla from "./escenas/BatallaEscena";
+import BatallaHUD from "./escenas/BatallaHUD";
 
 // Plugin to change the color in some text easily
 import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
@@ -18,7 +18,7 @@ const config: Phaser.Types.Core.GameConfig = {
     pixelArt: true,
     parent: "game-container",
     backgroundColor: "#FFFFFF",
-    scene: [BattleScene, BattleHUD],
+    scene: [EscenaBatalla, BatallaHUD],
     plugins: {
         scene: [
             {

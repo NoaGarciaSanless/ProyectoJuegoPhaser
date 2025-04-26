@@ -54,19 +54,19 @@ function registrar() {
 // Loggea al usuario
 function iniciarSesion() {
     if (nombreLogin != "" && contrasenhaLogin != "") {
-        iniciarSesionConUsuario(nombreLogin, nombreLogin, contrasenhaLogin)
+        iniciarSesionConUsuario(nombreLogin, contrasenhaLogin)
             .then((resultado) => {
-                console.log(resultado);
+
             }
             )
             .catch((error) => {
                 if (typeof (error) === "string") {
 
                     if (error === "auth/invalid-email") {
-                        mesajesError.value.login = "Este correo no es válido";
+                        mesajesError.value.login = error;
                     }
                     if (error === "auth/invalid-credential") {
-                        mesajesError.value.login = "La contraseña no es correcta";
+
                     }
 
                 }
@@ -88,7 +88,7 @@ function iniciarSesion() {
                     <h3>Login</h3>
                     <form>
                         <div class="campo">
-                            <label for="loginLogin">Usuario: </label>
+                            <label for="loginLogin">Usuario o email: </label>
                             <input type="text" id="loginLogin" v-model="nombreLogin">
                         </div>
 
@@ -230,7 +230,7 @@ form {
     align-items: center;
 }
 
-.enviarFormBTN{
+.enviarFormBTN {
     width: 50%;
     margin-top: 5%;
 
