@@ -10,7 +10,6 @@ import {
     collection,
     doc,
     getDocs,
-    or,
     query,
     setDoc,
     where,
@@ -69,6 +68,14 @@ export function registrarUsuario(
 
                     if (error.code === "auth/weak-password") {
                         mensajeError = "La contraseña es demasiado débil";
+                    }
+
+                    if (
+                        error.code ===
+                        "auth/password-does-not-meet-requirements"
+                    ) {
+                        mensajeError =
+                            "La contraseña debe contener mayúsculas, caracteres especiales y números";
                     }
 
                     throw new Error(mensajeError);

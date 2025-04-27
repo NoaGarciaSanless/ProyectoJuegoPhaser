@@ -2,22 +2,22 @@
 import { ref } from 'vue';
 
 import { registrarUsuario, iniciarSesionConUsuario } from '../Servicios/UsuariosServicio';
-import { error } from 'console';
 
 // Variables de vista
 let login = ref(true);
-let mesajesError = ref({
+let mensajesError = ref({
     login: "",
+    registro: "",
 });
 
 // Variables de formulario
-let nombreLogin: string = "";
-let contrasenhaLogin: string = "";
+const nombreLogin = ref("");
+const contrasenhaLogin = ref("");
 
-let nombreRegistro: string = "";
-let emailRegistro: string = "";
-let contrasenhaRegistro: string = "";
-let contrasenhaVRegistro: string = "";
+const nombreRegistro = ref("");
+const emailRegistro = ref("");
+const contrasenhaRegistro = ref("");
+const contrasenhaVRegistro = ref("");
 
 
 
@@ -30,13 +30,12 @@ function alternarFormulario() {
 }
 
 function vaciarFormularios() {
-    nombreLogin = "";
-    contrasenhaLogin = "";
-
-    nombreRegistro = "";
-    emailRegistro = "";
-    contrasenhaRegistro = "";
-    contrasenhaVRegistro = "";
+    nombreLogin.value = "";
+    contrasenhaLogin.value = "";
+    nombreRegistro.value = "";
+    emailRegistro.value = "";
+    contrasenhaRegistro.value = "";
+    contrasenhaVRegistro.value = "";
 
 }
 
@@ -44,34 +43,69 @@ function vaciarFormularios() {
 
 // Registra el usuario y lo loggea
 function registrar() {
-    if (emailRegistro != "" && contrasenhaRegistro != "" && contrasenhaVRegistro != "") {
-        if (contrasenhaRegistro === contrasenhaVRegistro) {
-            registrarUsuario(nombreRegistro, emailRegistro, contrasenhaRegistro);
-        }
+    console.log("Registro");
+    mensajesError.value.registro = "";
+
+    // Validaciones
+    if (!nombreRegistro.value.trim()) {
+        mensajesError.value.registro = "El nombre de usuario es requerido";
+        return;
     }
+    if (!emailRegistro.value || !emailRegistro.value.includes("@")) {
+        mensajesError.value.registro = "El correo no es válido";
+        return;
+    }
+    if (contrasenhaRegistro.value.length < 8) {
+        mensajesError.value.registro = "La contraseña debe tener al menos 8 caracteres";
+        return;
+    }
+    if (contrasenhaRegistro.value !== contrasenhaVRegistro.value) {
+        mensajesError.value.registro = "Las contraseñas no coinciden";
+        return;
+    }
+
+    registrarUsuario(nombreRegistro.value, emailRegistro.value, contrasenhaRegistro.value)
+        .then((resultado) => {
+            console.log(resultado);
+
+        })
+        .catch((error) => {
+            console.log(error);
+
+        });
+
+
 }
 
 // Loggea al usuario
 function iniciarSesion() {
-    if (nombreLogin != "" && contrasenhaLogin != "") {
-        iniciarSesionConUsuario(nombreLogin, contrasenhaLogin)
-            .then((resultado) => {
+    mensajesError.value.login = "";
+
+    if (!nombreLogin.value.trim()) {
+        mensajesError.value.login = "El nombre de usuario o correo es requerido";
+        return;
+    }
+    if (contrasenhaLogin.value.length < 6) {
+        mensajesError.value.login = "La contraseña debe tener al menos 6 caracteres";
+        return;
+    }
+
+
+
+    iniciarSesionConUsuario(nombreLogin.value, contrasenhaLogin.value)
+        .then((resultado) => {
+            console.log(resultado);
+
+        }
+        )
+        .catch((error) => {
+            if (typeof (error) === "string") {
+
+                mensajesError.value.login = error;
 
             }
-            )
-            .catch((error) => {
-                if (typeof (error) === "string") {
+        });
 
-                    if (error === "auth/invalid-email") {
-                        mesajesError.value.login = error;
-                    }
-                    if (error === "auth/invalid-credential") {
-
-                    }
-
-                }
-            });
-    }
 
 }
 
@@ -81,70 +115,71 @@ function iniciarSesion() {
 <template>
     <div id="componeteLogin">
 
+        <div class="contenedorTransicion" aria-live="polite">
+            <transition name="fade" mode="out-in">
+                <div id="login" v-if="login" key="login">
+                    <div class="contenedorForm">
+                        <h3>Login</h3>
+                        <form>
+                            <div class="campo">
+                                <label for="loginLogin">Usuario o email: </label>
+                                <input type="text" id="loginLogin" v-model="nombreLogin">
+                            </div>
 
-        <transition name="fade">
-            <div id="login" v-if="login">
-                <div class="contenedorForm">
-                    <h3>Login</h3>
-                    <form>
-                        <div class="campo">
-                            <label for="loginLogin">Usuario o email: </label>
-                            <input type="text" id="loginLogin" v-model="nombreLogin">
-                        </div>
+                            <div class="campo">
+                                <label for="contrasenhaLogin">Contraseña: </label>
+                                <input type="password" id="contrasenhaLogin" v-model="contrasenhaLogin">
+                            </div>
 
-                        <div class="campo">
-                            <label for="contrasenhaLogin">Contraseña: </label>
-                            <input type="password" id="contrasenhaLogin" v-model="contrasenhaLogin">
-                        </div>
+                            <p v-if="mensajesError.login">{{ mensajesError.login }}</p>
 
-                        <p v-if="mesajesError.login">{{ mesajesError.login }}</p>
+                            <button @click.prevent="iniciarSesion" class="enviarFormBTN">Login</button>
+                        </form>
 
-                        <button @click.prevent="iniciarSesion" class="enviarFormBTN">Login</button>
-                    </form>
+                    </div>
 
+                    <div id="seccionRegistro">
+                        <span>¿No tienes cuenta?</span>
+                        <button @click="alternarFormulario" class="registro">Registrarse</button>
+                    </div>
                 </div>
 
-                <div id="seccionRegistro">
-                    <span>¿No tienes cuenta?</span>
-                    <button @click="alternarFormulario" class="registro">Registrarse</button>
+                <div id="registro" v-else key="registro">
+                    <div class="contenedorForm">
+                        <h3>Registro</h3>
+                        <form>
+                            <div class="campo">
+                                <label for="loginRegistro">Usuario: </label>
+                                <input type="text" id="loginRegistro" v-model="nombreRegistro">
+                            </div>
+
+                            <div class="campo">
+                                <label for="emailRegistro">Email: </label>
+                                <input type="email" id="emailRegistro" v-model="emailRegistro">
+                            </div>
+
+                            <div class="campo">
+                                <label for="contrasenhaRegistro">Contraseña: </label>
+                                <input type="password" id="contrasenhaRegistro" v-model="contrasenhaRegistro">
+                            </div>
+
+                            <div class="campo">
+                                <label for="contrasenhaVRegistro">Verifíca contraseña: </label>
+                                <input type="password" id="contrasenhaVRegistro" v-model="contrasenhaVRegistro">
+                            </div>
+
+                            <p v-if="mensajesError.registro" class="error">{{ mensajesError.registro }}</p>
+
+                            <button @click.prevent="registrar" class="enviarFormBTN">Registrarse</button>
+                        </form>
+                    </div>
+
+                    <div class="opciones">
+                        <button @click="alternarFormulario" class="cancelar">Cancelar</button>
+                    </div>
                 </div>
-            </div>
-        </transition>
-
-        <transition name="fade">
-            <div id="registro" v-if="!login">
-                <div class="contenedorForm">
-                    <h3>Registro</h3>
-                    <form>
-                        <div class="campo">
-                            <label for="loginRegistro">Usuario: </label>
-                            <input type="text" id="loginRegistro" v-model="nombreRegistro">
-                        </div>
-
-                        <div class="campo">
-                            <label for="emailRegistro">Email: </label>
-                            <input type="email" id="emailRegistro" v-model="emailRegistro">
-                        </div>
-
-                        <div class="campo">
-                            <label for="contrasenhaRegistro">Contraseña: </label>
-                            <input type="password" id="contrasenhaRegistro" v-model="contrasenhaRegistro">
-                        </div>
-
-                        <div class="campo">
-                            <label for="contrasenhaVRegistro">Verifíca contraseña: </label>
-                            <input type="password" id="contrasenhaVRegistro" v-model="contrasenhaVRegistro">
-                        </div>
-
-                        <button @click.prevent="registrar" class="enviarFormBTN">Registrarse</button>
-                    </form>
-                </div>
-
-                <div class="opciones">
-                    <button @click="alternarFormulario" class="cancelar">Cancelar</button>
-                </div>
-            </div>
-        </transition>
+            </transition>
+        </div>
     </div>
 
 </template>
@@ -164,8 +199,19 @@ function iniciarSesion() {
     align-items: center;
 }
 
+
+/* Contenedor para la transición */
+.contenedorTransicion {
+    position: relative;
+    width: 400px;
+    /* Ancho fijo para evitar cambios de tamaño */
+    min-height: 400px;
+    /* Altura mínima para consistencia */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 /* Efectos para la transición entre formularios */
-/* TODO : Por ajustar */
 .fade-enter-active,
 .fade-leave-active {
     transition: opacity 0.5s ease;

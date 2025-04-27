@@ -26,13 +26,14 @@ defineExpose({ scene, game });
 
 </script>
 
-<style scoped>
-
-
-</style>
+<style scoped></style>
 
 <template>
+
+
     <div class="game-wrapper">
-        <div id="game-container" ></div>
+        <div id="game-container"></div>
+
     </div>
+
 </template>
