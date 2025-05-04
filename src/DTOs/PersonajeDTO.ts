@@ -1,0 +1,99 @@
+export class PersonajeDTO {
+    public id: string;
+    public nombre: string;
+    public descripcion: string;
+
+    public ataqueBase: number;
+    public ataquePorNivel: number;
+
+    public defensaBase: number;
+    public defensaPorNivel: number;
+
+    public ataqueMagicoBase: number;
+    public ataqueMagicoPorNivel: number;
+
+    public precisionBase: number;
+    public criticoBase: number;
+
+    public debilidad: string;
+    public fortaleza: string;
+
+    public habilidades: string[];
+    
+
+    public urlSprites : string;
+    public urlJSON: string;
+
+
+
+    public constructor(
+        id?: string,
+        nombre?: string,
+        descripcion?: string,
+        ataqueBase?: number,
+        ataquePorNivel?: number,
+        defensaBase?: number,
+        defensaPorNivel?: number,
+        ataqueMagicoBase?: number,
+        ataqueMagicoPorNivel?: number,
+        precisionBase?: number,
+        criticoBase?: number,
+        debilidad?: string,
+        fortaleza?: string,
+        habilidades?: string[],
+        urlSprites?: string,
+        urlJSON?: string
+    ) {
+        this.id = id || "";
+        this.nombre = nombre || "";
+        this.descripcion = descripcion || "";
+
+        this.ataqueBase = ataqueBase || 0;
+        this.ataquePorNivel = ataquePorNivel || 0;
+
+        this.defensaBase = defensaBase || 0;
+        this.defensaPorNivel = defensaPorNivel || 0;
+
+        this.ataqueMagicoBase = ataqueMagicoBase || 0;
+        this.ataqueMagicoPorNivel = ataqueMagicoPorNivel || 0;
+
+        this.precisionBase = precisionBase || 0;
+        this.criticoBase = criticoBase || 0;
+
+        this.debilidad = debilidad || "";
+        this.fortaleza = fortaleza || "";
+
+        this.habilidades = habilidades || [];
+
+        this.urlSprites = urlSprites || "";
+        this.urlJSON = urlJSON || "";
+    }
+
+    aObjetoJS() {
+        return {
+            id: this.id,
+            nombre: this.nombre,
+            descripcion: this.descripcion,
+
+            ataqueBase: this.ataqueBase,
+            ataquePorNivel: this.ataquePorNivel,
+
+            defensaBase: this.defensaBase,
+            defensaPorNivel: this.defensaPorNivel,
+
+            ataqueMagicoBase: this.ataqueMagicoBase,
+            ataqueMagicoPorNivel: this.ataqueMagicoPorNivel,
+
+            precisionBase: this.precisionBase,
+            criticoBase: this.criticoBase,
+
+            debilidad: this.debilidad,
+            fortaleza: this.fortaleza,
+
+            habilidades: this.habilidades,
+
+            urlSprites: this.urlSprites,
+            urlJSON: this.urlJSON,
+        };
+    }
+}

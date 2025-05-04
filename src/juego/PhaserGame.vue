@@ -14,8 +14,7 @@ onMounted(() => {
 
 onUnmounted(() => {
 
-    if (game.value)
-    {
+    if (game.value) {
         game.value.destroy(true);
         game.value = null;
     }
@@ -30,10 +29,6 @@ defineExpose({ scene, game });
 
 <template>
 
-
-    <div class="game-wrapper">
-        <div id="game-container"></div>
-
-    </div>
+    <div id="game-container"></div>
 
 </template>

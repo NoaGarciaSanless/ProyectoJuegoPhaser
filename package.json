@@ -27,9 +27,11 @@
         "build-nolog": "vite build --config vite/config.prod.mjs"
     },
     "dependencies": {
+        "cloudinary": "^2.6.0",
         "firebase": "^11.6.1",
         "phaser": "^3.87.0",
         "phaser3-rex-plugins": "^1.80.13",
+        "pixi.js": "^8.9.2",
         "vue": "^3.4.27"
     },
     "devDependencies": {

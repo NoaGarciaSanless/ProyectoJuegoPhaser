@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
-import { registrarUsuario, iniciarSesionConUsuario } from '../Servicios/UsuariosServicio';
+import { registrarUsuario, iniciarSesionConUsuario, comprobarUsuario } from '../Servicios/UsuariosServicio';
+
+
+// Eventos
+const emit = defineEmits(['usuarioLogeado']);
 
 // Variables de vista
-let login = ref(true);
+let esLoginVista = ref(true);
 let mensajesError = ref({
     login: "",
     registro: "",
@@ -25,7 +29,7 @@ const contrasenhaVRegistro = ref("");
 
 // Manejar la vista
 function alternarFormulario() {
-    login.value = !login.value;
+    esLoginVista.value = !esLoginVista.value;
     vaciarFormularios();
 }
 
@@ -67,7 +71,8 @@ function registrar() {
     registrarUsuario(nombreRegistro.value, emailRegistro.value, contrasenhaRegistro.value)
         .then((resultado) => {
             console.log(resultado);
-
+            emit("usuarioLogeado", resultado);
+            vaciarFormularios();
         })
         .catch((error) => {
             console.log(error);
@@ -79,22 +84,26 @@ function registrar() {
 
 // Loggea al usuario
 function iniciarSesion() {
+
+
     mensajesError.value.login = "";
 
     if (!nombreLogin.value.trim()) {
         mensajesError.value.login = "El nombre de usuario o correo es requerido";
         return;
     }
-    if (contrasenhaLogin.value.length < 6) {
-        mensajesError.value.login = "La contraseña debe tener al menos 6 caracteres";
-        return;
-    }
+
+    // if (contrasenhaLogin.value.length < 6) {
+    //     mensajesError.value.login = "La contraseña debe tener al menos 6 caracteres";
+    //     return;
+    // }
 
 
 
     iniciarSesionConUsuario(nombreLogin.value, contrasenhaLogin.value)
         .then((resultado) => {
             console.log(resultado);
+            emit("usuarioLogeado", resultado);
 
         }
         )
@@ -106,10 +115,16 @@ function iniciarSesion() {
             }
         });
 
-
 }
 
 
+onMounted(async () => {
+    let hayUsuario = await comprobarUsuario();
+
+    emit("usuarioLogeado", hayUsuario);
+
+
+});
 </script>
 
 <template>
@@ -117,7 +132,7 @@ function iniciarSesion() {
 
         <div class="contenedorTransicion" aria-live="polite">
             <transition name="fade" mode="out-in">
-                <div id="login" v-if="login" key="login">
+                <div id="login" v-if="esLoginVista" key="login">
                     <div class="contenedorForm">
                         <h3>Login</h3>
                         <form>
@@ -211,6 +226,7 @@ function iniciarSesion() {
     justify-content: center;
     align-items: center;
 }
+
 /* Efectos para la transición entre formularios */
 .fade-enter-active,
 .fade-leave-active {

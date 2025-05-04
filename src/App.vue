@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import Phaser from 'phaser';
-import { ref, toRaw } from 'vue';
+import { nextTick, ref } from 'vue';
 
 
 import PhaserGame from './juego/PhaserGame.vue';
 import LoginComponente from './componentes-info/Login-componente.vue';
+import Header from './compartido/Header.vue';
+import { cerrarSesionUsuario } from './Servicios/UsuariosServicio';
+import GuiaComponente from './componentes-info/Guia-componente.vue';
 
 
 //  References to the PhaserGame component (game and scene are exposed)
@@ -13,30 +16,54 @@ const phaserRef = ref();
 // Variables para cambiar la pantalla del juego
 const fullscreen = ref(false);
 
+// Variables para almacenar el login
+let nombreUsuarioLogeado = ref("");
+
 // Alterna entre pantalla completa y partida
-function alternarPantalla() {
+async function alternarPantalla() {
     fullscreen.value = !fullscreen.value;
+
 }
 
+// Recibe el usuario logueado
+function actualizarUsuarioLoggeado(nombreUsuario: string) {
+    nombreUsuarioLogeado.value = nombreUsuario;
+}
+
+function cerrarSesion() {
+    cerrarSesionUsuario();
+    nombreUsuarioLogeado.value = "";
+}
 
 </script>
 
 <template>
 
+    <div id="main">
+        <Header :login="nombreUsuarioLogeado" @cerrar-sesion="cerrarSesion"></Header>
 
+        <div class="app-container">
 
-    <div class="game-container">
-        <PhaserGame ref="phaserRef" />
+            <div class="game-container" :class="{ 'fullscreen': fullscreen }">
+                <PhaserGame ref="phaserRef" />
 
-        <button id="alternarPantalla" @click="alternarPantalla" class="fondoOscuro">
-            <span class="material-symbols-outlined">
-                fullscreen
-            </span>
-        </button>
-    </div>
+                <button id="alternarPantalla" @click="alternarPantalla" class="fondoOscuro">
 
-    <div class="funcionlidades" v-show="!fullscreen">
-        <LoginComponente />
+                    <span class="material-symbols-outlined">
+                        fullscreen
+                    </span>
+
+                </button>
+            </div>
+
+            <div class="funcionlidades" v-show="!fullscreen">
+                <LoginComponente v-if="nombreUsuarioLogeado == ''" @usuario-logeado="actualizarUsuarioLoggeado" />
+                <div v-else>
+                    <GuiaComponente />
+                </div>
+            </div>
+
+        </div>
     </div>
 
 
@@ -44,40 +71,57 @@ function alternarPantalla() {
 </template>
 
 <style scoped>
+#main {
+    display: flex;
+    flex-direction: column;
+
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+.app-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+
+    min-height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+
+    box-sizing: border-box;
+}
+
 .game-container {
     width: 50vw;
-    /* 50% del ancho de la pantalla */
     height: 100vh;
 
-    /* 100% de la altura de la pantalla */
     background-color: #000;
-    /* El color de fondo para que se vea bien el juego */
+
     position: relative;
-    /* Asegurarse de que esté posicionado correctamente */
     z-index: 1;
-    /* El juego estará sobre los componentes Vue */
+    /* transition: width 0.3s ease; */
+}
 
-
-
+.game-container.fullscreen {
+    width: 100vw;
+    height: 100vh;
+    z-index: 100;
 }
 
 .funcionlidades {
     width: 50vw;
-    /* La otra mitad del ancho para los componentes Vue */
     height: 100vh;
-    /* La misma altura para los componentes */
     background-color: #ffffff;
     color: #000;
-    /* Fondo opcional para los componentes */
-
     z-index: 10;
-    /* Asegurarse de que los componentes Vue estén encima */
-
-
 }
 
 .material-symbols-outlined {
     font-size: 3.5em;
+    color: #fff;
 }
 
 #alternarPantalla {
@@ -87,9 +131,10 @@ function alternarPantalla() {
     border: none;
 
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 1rem;
+    right: 1rem;
     z-index: 100;
+    padding: 0.5rem;
 }
 
 #alternarPantalla:hover {

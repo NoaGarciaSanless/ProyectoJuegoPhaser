@@ -1,8 +1,9 @@
 // Registrarse en firebase
-
 import {
     createUserWithEmailAndPassword,
+    onAuthStateChanged,
     signInWithEmailAndPassword,
+    updateProfile,
 } from "firebase/auth";
 import { auth, db } from "./ConexionFirebase";
 import { UsuarioDTO } from "../DTOs/UsuarioDTO";
@@ -52,7 +53,13 @@ export function registrarUsuario(
                     const docRef = doc(db, "usuarios", nuevoUsuario.id);
                     await setDoc(docRef, nuevoUsuario.aObjetoJS());
 
-                    resolve("Ok");
+                    await updateProfile(credenciales.user, {
+                        displayName: nombre,
+                    });
+
+                    console.log(credenciales.user);
+
+                    resolve(credenciales.user.displayName);
                 })
                 .catch((error) => {
                     console.log(error.code);
@@ -81,6 +88,8 @@ export function registrarUsuario(
                     throw new Error(mensajeError);
                 });
         } catch (error: any) {
+            console.log(error);
+
             reject(error);
         }
     });
@@ -97,7 +106,19 @@ export function iniciarSesionConUsuario(login: string, contrasenha: string) {
             if (!login.includes("@")) {
                 const tabla = collection(db, "usuarios");
                 const consulta = query(tabla, where("nombre", "==", login));
-                const resultado = await getDocs(consulta);
+                let resultado;
+
+                try {
+                    resultado = await getDocs(consulta);
+                } catch (error: any) {
+                    console.error(
+                        "Error en la consulta de Firestore:",
+                        error.message
+                    );
+                    throw new Error(
+                        "Error al buscar el usuario: " + error.message
+                    );
+                }
 
                 if (resultado.empty) {
                     throw new Error(
@@ -114,7 +135,7 @@ export function iniciarSesionConUsuario(login: string, contrasenha: string) {
                     console.log(credenciales.user);
                     console.log("Usuario ha iniciado sesión");
 
-                    resolve(credenciales.user);
+                    resolve(credenciales.user.displayName);
                 })
                 .catch((error) => {
                     console.log(error.code);
@@ -130,7 +151,36 @@ export function iniciarSesionConUsuario(login: string, contrasenha: string) {
                     }
                 });
         } catch (error: any) {
+            console.log(error);
+
             reject(error);
         }
     });
+}
+
+// Comprueba las sesiones, si hay usuario devuelve su nombre
+export function comprobarUsuario() {
+    return new Promise((resolve, reject) => {
+        onAuthStateChanged(
+            auth,
+            (usuario) => {
+                if (usuario) {
+                    console.log("Hay un usuario");
+                    resolve(usuario.displayName);
+                } else {
+                    console.log("No hay usuario");
+                    resolve("");
+                }
+            },
+            (error) => {
+                console.log(error);
+                reject("Ha ocurrido un error");
+            }
+        );
+    });
+}
+
+// Log out del usuario
+export function cerrarSesionUsuario() {
+    auth.signOut();
 }
