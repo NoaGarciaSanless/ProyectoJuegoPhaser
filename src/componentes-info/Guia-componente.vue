@@ -81,46 +81,63 @@ onMounted(async () => {
 /* Contenedor principal */
 #componenteGuia {
     width: 100%;
+
     display: flex;
     flex-direction: column;
     align-items: center;
+
     padding: 20px;
+
     box-sizing: border-box;
+
     font-family: 'Nunito Sans', sans-serif;
+
     color: #333;
 }
 
 #componenteGuia h2 {
     font-size: 2rem;
+
     margin-bottom: 10px;
+
     color: #222;
 }
 
 .info {
     font-size: 1rem;
+
     margin-bottom: 20px;
+
     color: #555;
+
     text-align: center;
+
     max-width: 80%;
 }
 
 /* Formulario */
 #filtro {
     width: 100%;
+
     max-width: 800px;
+
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
     align-items: center;
+
     padding: 15px 0;
-    border-bottom: 2px solid #ccc;
     margin-bottom: 20px;
+    border-bottom: 2px solid #ccc;
 }
 
 #filtro h3 {
     font-size: 1.25rem;
+
     padding-right: 15px;
+
     border-right: 2px solid #ccc;
+    
     margin: 0;
 }
 
@@ -138,10 +155,13 @@ onMounted(async () => {
 #filtro input,
 #filtro select {
     padding: 8px;
+
     border: 1px solid #ccc;
     border-radius: 4px;
+
     font-size: 1rem;
     font-family: 'Nunito Sans', sans-serif;
+
     transition: border-color 0.2s ease;
 }
 
@@ -154,17 +174,22 @@ onMounted(async () => {
 #filtro .botones {
     margin-left: auto;
     padding-left: 15px;
+
     border-left: 2px solid #ccc;
 }
 
 #filtro #buscarFGBTN {
     padding: 8px 16px;
+
     background-color: #007bff;
+
     color: #fff;
+    font-size: 1rem;
     border: none;
     border-radius: 4px;
-    font-size: 1rem;
+
     cursor: pointer;
+    
     transition: background-color 0.2s ease;
 }
 
@@ -177,8 +202,10 @@ onMounted(async () => {
     width: 100%;
     max-width: 1200px;
     padding: 20px;
+
     background-color: #ffffff;
     border-radius: 8px;
+    
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
 }
