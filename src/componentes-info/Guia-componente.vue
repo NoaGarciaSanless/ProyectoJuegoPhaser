@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import TarjetaDato from '../compartido/TarjetaDato.vue';
-import { recogerPersonajes } from '../Servicios/DatosAssetsServicio';
+import { recogerEnemigos, recogerPersonajes } from '../Servicios/DatosAssetsServicio';
 import { PersonajeDTO } from '../DTOs/PersonajeDTO';
 import { EnemigoDTO } from '../DTOs/EnemigoDTO';
 import { MejoraDTO } from '../DTOs/MejoraDTO';
@@ -10,14 +10,20 @@ import { MejoraDTO } from '../DTOs/MejoraDTO';
 let lista = ref<(PersonajeDTO | EnemigoDTO | MejoraDTO)[]>([]);
 
 onMounted(async () => {
-    let listaPersonajes : PersonajeDTO[] = await recogerPersonajes();
+
+    // Recoge los personajes para mostrarlos en la guia
+    let listaPersonajes: PersonajeDTO[] = await recogerPersonajes();
     console.log(listaPersonajes);
-    
 
     lista.value.push(...listaPersonajes);
 
-    console.log(lista.value);
-    
+    // Recoge los enemigos para mostrarlos en la guia
+    let listaEnemigos: EnemigoDTO[] = await recogerEnemigos();
+    console.log(listaEnemigos);
+
+    lista.value.push(...listaEnemigos);
+
+
 });
 
 </script>
@@ -56,7 +62,7 @@ onMounted(async () => {
 
         <div class="contenido">
             <div id="lista">
-                <TarjetaDato v-for="(dato, index) in lista" :key="index" :dato="dato"></TarjetaDato>
+                <TarjetaDato class="elemento" v-for="(dato, index) in lista" :key="index" :dato="dato"></TarjetaDato>
             </div>
 
             <div class="detalles">
@@ -75,52 +81,123 @@ onMounted(async () => {
 /* Contenedor principal */
 #componenteGuia {
     width: 100%;
-    height: 100%;
-
-    font-family: "Nunito Sans", sans-serif;
-
     display: flex;
     flex-direction: column;
-
-    justify-content: center;
     align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+    font-family: 'Nunito Sans', sans-serif;
+    color: #333;
+}
+
+#componenteGuia h2 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: #222;
+}
+
+.info {
+    font-size: 1rem;
+    margin-bottom: 20px;
+    color: #555;
+    text-align: center;
+    max-width: 80%;
 }
 
 /* Formulario */
 #filtro {
-    width: 70%;
-
+    width: 100%;
+    max-width: 800px;
     display: flex;
-    flex-direction: row;
-    gap: 10px;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
     align-items: center;
-
-    border-bottom: 3px solid #9d9d9d;
+    padding: 15px 0;
+    border-bottom: 2px solid #ccc;
+    margin-bottom: 20px;
 }
 
 #filtro h3 {
-    padding: 10px;
-    border-right: 3px solid #9d9d9d;
+    font-size: 1.25rem;
+    padding-right: 15px;
+    border-right: 2px solid #ccc;
+    margin: 0;
+}
+
+#filtro .campo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#filtro label {
+    font-size: 1rem;
+    color: #333;
+}
+
+#filtro input,
+#filtro select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-family: 'Nunito Sans', sans-serif;
+    transition: border-color 0.2s ease;
+}
+
+#filtro input:focus,
+#filtro select:focus {
+    border-color: #007bff;
+    outline: none;
 }
 
 #filtro .botones {
-    padding: 10px;
-    margin-left: 80px;
-    border-left: 3px solid #9d9d9d;
+    margin-left: auto;
+    padding-left: 15px;
+    border-left: 2px solid #ccc;
 }
 
 #filtro #buscarFGBTN {
-    font-family: "Nunito Sans", sans-serif;
-    font-size: larger;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
+#filtro #buscarFGBTN:hover {
+    background-color: #0056b3;
+}
+
+/* Contenido */
 .contenido {
     width: 100%;
-    height: 100%;
+    max-width: 1200px;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
 
-    margin-top: 40px;
+/* Lista de elementos */
+#lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    padding: 10px;
+}
 
-    background-color: bisque;
+/* Estilo de cada elemento de la guia */
+.elemento {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.elemento:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 </style>

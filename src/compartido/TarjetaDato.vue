@@ -6,15 +6,26 @@ import { EnemigoDTO } from '../DTOs/EnemigoDTO';
 import { MejoraDTO } from '../DTOs/MejoraDTO';
 import { PersonajeDTO } from '../DTOs/PersonajeDTO';
 
-// Props
+// Props -------------------------------------
 const props = defineProps<{
     dato: PersonajeDTO | EnemigoDTO | MejoraDTO
 }>();
 
-// Variables
+// Variables ---------------------------------
+
+// Obtiene el tipo de elemento que se mostrará
 const tipo = props.dato.constructor.name;
+// Verifica que el elemneto tenga una imagen disponible
+const conImagen = props.dato.urlSprites != "" ? true : false;
+
+// El contenedor sobre el que se construirá la imagen
 const contenedorSprite = ref<HTMLDivElement | null>(null);
+
+// Imagen con animación
 let app: PIXI.Application<PIXI.Renderer> | null = null;
+
+
+// Funciones ---------------------------------
 
 // Convierte el formato json que crea Aseprite al que necisat PIXI
 function convertirAsepriteAPixi(json: any): any {
@@ -39,17 +50,37 @@ function convertirAsepriteAPixi(json: any): any {
     };
 }
 
+// Devuelve el string de la descripción recortado
+function recortarDescripcion() {
+    let descripcionOriginal = props.dato.descripcion;
 
+    // Si hay descripción
+    if (descripcionOriginal) {
+        // Si tiene menos de 60 caractéres devuelve el original, si no lo transforma
+        if (descripcionOriginal.length <= 60) {
+            return descripcionOriginal;
+        } else {
+            let descripcionTransformada = descripcionOriginal.slice(0, 57).concat("...");
+
+            return descripcionTransformada;
+        }
+    }
+}
+
+
+// Hooks de VUE ------------------------------
+// Cuando se crea el componente, se crea la imagen con la animación
 onMounted(async () => {
     app = new PIXI.Application();
-    await app.init({ 
-        width: 100, 
-        height: 150, 
-        backgroundAlpha: 0, 
-        resolution: 1 });
-     contenedorSprite.value?.appendChild(app.canvas);
+    await app.init({
+        width: 100,
+        height: 150,
+        backgroundAlpha: 0,
+        resolution: 1
+    });
+    contenedorSprite.value?.appendChild(app.canvas);
 
-    // Obtine la imagen y el json de datos de la imagen, si no estan vacios crea la habitación
+    // Obtine la imagen y el json de datos de la imagen, si no estan vacios crea la imagen
     if (props.dato.urlSprites != "" && props.dato.urlJSON != "") {
 
         try {
@@ -73,13 +104,22 @@ onMounted(async () => {
                 },
             };
 
+
             // Crea el spritesheet
             const sheet = new PIXI.Spritesheet(texture, jsonCorregido);
             await sheet.parse()
 
             // Animación si el objeto recibido es un personaje o enemigo, o una imagen si es una mejora o un objeto
             if (tipo == "PersonajeDTO" || tipo == "EnemigoDTO") {
-                const anim = new PIXI.AnimatedSprite(sheet.animations['Idle']);
+                let anim: PIXI.AnimatedSprite;
+
+                // Si es un enemigo elige la animación "Idle_izq", si no pondra "Idle"
+                if (tipo == "EnemigoDTO") {
+                    anim = new PIXI.AnimatedSprite(sheet.animations['Idle_derch']);
+                } else {
+                    anim = new PIXI.AnimatedSprite(sheet.animations['Idle']);
+                }
+
                 anim.anchor.set(0.5);
                 anim.x = app.screen.width / 2;
                 anim.y = app.screen.height / 2;
@@ -108,6 +148,7 @@ onMounted(async () => {
 
 })
 
+// Cuando se elimina el componente se limpia la imagen con la animación
 onBeforeUnmount(() => {
     // Limpiar recursos al desmontar el componente
     if (app) {
@@ -122,11 +163,14 @@ onBeforeUnmount(() => {
 <template>
     <div class="tarjeta">
         <h3>{{ dato.nombre }}</h3>
-        <div class="contenedorSprite" ref="contenedorSprite"> </div>
+        <div class="contenedorSprite" ref="contenedorSprite">
+            <span v-if="!conImagen"> No hay un sprite disponible para mostrar</span>
+        </div>
 
         <div class="datos">
-            <h4>Descripción</h4>
-            <p>{{ dato.descripcion }}</p>
+            <p class="titulo">Descripción</p>
+            <p>{{ recortarDescripcion() }}</p>
+            <button class="verBTN">Ver detalles</button>
         </div>
     </div>
 
@@ -161,7 +205,52 @@ onBeforeUnmount(() => {
     height: 150px;
 }
 
-.datos{
+/* Estilos de la información adicional */
+.datos {
     width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.datos .titulo {
+    margin: 0;
+    padding: 0;
+
+    font-size: large;
+    font-weight: bold;
+}
+
+.datos p {
+    margin: 0;
+    padding: 0;
+
+    margin-left: 10px;
+}
+
+.datos button {
+    width: 60%;
+
+    margin-right: 10px;
+    margin-top: 10px;
+
+    align-self: flex-end;
+}
+
+.verBTN {
+    cursor: pointer;
+
+    font-size: 0.9em;
+
+    background-color: #e2c16b;
+    border: #e2c16b;
+    border-radius: 5px;
+
+    padding: 2px;
+}
+
+.verBTN:hover {
+    background-color: #e7ca81;
 }
 </style>
