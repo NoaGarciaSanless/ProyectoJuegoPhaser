@@ -19,12 +19,9 @@ export class EnemigoDTO {
     public fortaleza: string;
 
     public habilidades: string[];
-    
 
-    public urlSprites : string;
-    public urlJSON: string;
-
-
+    public spriteURL: string;
+    public jsonURL: string;
 
     public constructor(
         id?: string,
@@ -65,8 +62,8 @@ export class EnemigoDTO {
 
         this.habilidades = habilidades || [];
 
-        this.urlSprites = urlSprites || "";
-        this.urlJSON = urlJSON || "";
+        this.spriteURL = urlSprites || "";
+        this.jsonURL = urlJSON || "";
     }
 
     aObjetoJS() {
@@ -92,8 +89,8 @@ export class EnemigoDTO {
 
             habilidades: this.habilidades,
 
-            urlSprites: this.urlSprites,
-            urlJSON: this.urlJSON,
+            urlSprites: this.spriteURL,
+            urlJSON: this.jsonURL,
         };
     }
 }

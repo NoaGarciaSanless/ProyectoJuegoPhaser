@@ -1,13 +1,44 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import TarjetaDato from '../compartido/TarjetaDato.vue';
-import { recogerEnemigos, recogerPersonajes } from '../Servicios/DatosAssetsServicio';
+import { filtrarLista, recogerEnemigos, recogerPersonajes } from '../Servicios/DatosAssetsServicio';
 import { PersonajeDTO } from '../DTOs/PersonajeDTO';
 import { EnemigoDTO } from '../DTOs/EnemigoDTO';
 import { MejoraDTO } from '../DTOs/MejoraDTO';
 
 
-let lista = ref<(PersonajeDTO | EnemigoDTO | MejoraDTO)[]>([]);
+// Listas para el filtro
+// Lista original
+let lista = <any[]>[];
+// Lista para mostrar en el filtro
+let listaMostrar = ref<any[]>([]);
+// Decide si mostrar la lista
+let mostrarLista = ref(true);
+
+// Variables del filtro
+let nombre = ref("");
+let tipo = ref("");
+
+// Filtra por nombre y tipo
+async function filtrar() {
+    // Oculta la lista (principalmente para que se reinicie)
+    mostrarLista.value = false;
+
+    try {
+        const resultadoFiltro = await filtrarLista(nombre.value, tipo.value);
+
+        console.log(resultadoFiltro);
+
+
+        listaMostrar.value = resultadoFiltro;
+    } catch (error) {
+        console.error("Error al filtrar:", error);
+        listaMostrar.value = [];
+    } finally {
+        mostrarLista.value = true;
+
+    }
+}
 
 onMounted(async () => {
 
@@ -15,14 +46,15 @@ onMounted(async () => {
     let listaPersonajes: PersonajeDTO[] = await recogerPersonajes();
     console.log(listaPersonajes);
 
-    lista.value.push(...listaPersonajes);
+    lista.push(...listaPersonajes);
 
     // Recoge los enemigos para mostrarlos en la guia
     let listaEnemigos: EnemigoDTO[] = await recogerEnemigos();
     console.log(listaEnemigos);
 
-    lista.value.push(...listaEnemigos);
+    lista.push(...listaEnemigos);
 
+    listaMostrar.value = lista;
 
 });
 
@@ -39,30 +71,32 @@ onMounted(async () => {
 
             <div class="campo">
                 <label for="nombre">Nombre: </label>
-                <input type="text" id="nombre">
+                <input type="text" id="nombre" v-model="nombre">
             </div>
 
             <div class="campo">
                 <label for="tipo">Tipo: </label>
-                <select id="tipo">
+                <select id="tipo" v-model="tipo">
                     <option value="" disabled>--Selección de tipo--</option>
-                    <option value="personaje">Personajes</option>
-                    <option value="enemigo">Enemigos</option>
-                    <option value="npc">Personajes no jugables</option>
-                    <option value="mejora">Mejoras</option>
-                    <option value="objeto">Objeto</option>
+                    <option value="personajes">Personajes</option>
+                    <option value="enemigos">Enemigos</option>
+                    <option value="npcs">Personajes no jugables</option>
+                    <option value="mejoras">Mejoras</option>
+                    <option value="objetos">Objeto</option>
                 </select>
             </div>
 
             <div class="botones">
-                <button id="buscarFGBTN">Buscar</button>
+                <button id="buscarFGBTN" @click.prevent="filtrar">Buscar</button>
             </div>
 
         </form>
 
         <div class="contenido">
-            <div id="lista">
-                <TarjetaDato class="elemento" v-for="(dato, index) in lista" :key="index" :dato="dato"></TarjetaDato>
+            <div id="lista" v-if="mostrarLista">
+                <TarjetaDato class="elemento" v-for="(dato, index) in listaMostrar" :key="`tarjeta-${dato.nombre}`"
+                    :dato="dato">
+                </TarjetaDato>
             </div>
 
             <div class="detalles">
@@ -137,7 +171,7 @@ onMounted(async () => {
     padding-right: 15px;
 
     border-right: 2px solid #ccc;
-    
+
     margin: 0;
 }
 
@@ -189,7 +223,7 @@ onMounted(async () => {
     border-radius: 4px;
 
     cursor: pointer;
-    
+
     transition: background-color 0.2s ease;
 }
 
@@ -205,7 +239,7 @@ onMounted(async () => {
 
     background-color: #ffffff;
     border-radius: 8px;
-    
+
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
 }

@@ -16,7 +16,7 @@ const props = defineProps<{
 // Obtiene el tipo de elemento que se mostrará
 const tipo = props.dato.constructor.name;
 // Verifica que el elemneto tenga una imagen disponible
-const conImagen = props.dato.urlSprites != "" ? true : false;
+const conImagen = props.dato.spriteURL != "" ? true : false;
 
 // El contenedor sobre el que se construirá la imagen
 const contenedorSprite = ref<HTMLDivElement | null>(null);
@@ -30,7 +30,7 @@ let app: PIXI.Application<PIXI.Renderer> | null = null;
 // Convierte el formato json que crea Aseprite al que necisat PIXI
 function convertirAsepriteAPixi(json: any): any {
     if (!json.meta?.frameTags || !Array.isArray(json.meta.frameTags)) {
-        console.warn('No se han encontrado animaciones');
+        console.warn('No se han encontrado animaciones', json.meta);
         return json;
     }
 
@@ -81,26 +81,30 @@ onMounted(async () => {
     contenedorSprite.value?.appendChild(app.canvas);
 
     // Obtine la imagen y el json de datos de la imagen, si no estan vacios crea la imagen
-    if (props.dato.urlSprites != "" && props.dato.urlJSON != "") {
+    if (props.dato.spriteURL != "" && props.dato.jsonURL != "") {
 
         try {
-            // Carga las imagenes con PIXI y el json con fetch
-            const [texture, jsonAnims] = await Promise.all([
-                PIXI.Assets.load(props.dato.urlSprites),
-                fetch(props.dato.urlJSON).then(res => res.json()),
-            ]);
+            // Comprueba si existe la imagen, si existe simplemente la carga si no la recoge del servidor
+            let texture: PIXI.Texture;
+            if (PIXI.Assets.cache.has(props.dato.spriteURL)) {
+                texture = PIXI.Assets.get(props.dato.spriteURL);
+            } else {
+                texture = await PIXI.Assets.load(props.dato.spriteURL);
+            }
+
+            // Recoge el json con los datos de animación
+            const jsonAnims = await fetch(props.dato.jsonURL).then(res => res.json());
+            // Transforma el json para que lo pueda utilizar PIXI
+            const pixiJson = convertirAsepriteAPixi(jsonAnims);
 
             // Ajusta el sprite para que se vea nítido
             texture.source.scaleMode = 'nearest';
-
-            // Transforma el json para que lo pueda utilizar PIXI
-            const pixiJson = convertirAsepriteAPixi(jsonAnims);
 
             const jsonCorregido = {
                 ...pixiJson,
                 meta: {
                     ...pixiJson.meta,
-                    image: props.dato.urlSprites,
+                    image: props.dato.spriteURL,
                 },
             };
 
@@ -110,15 +114,12 @@ onMounted(async () => {
             await sheet.parse()
 
             // Animación si el objeto recibido es un personaje o enemigo, o una imagen si es una mejora o un objeto
-            if (tipo == "PersonajeDTO" || tipo == "EnemigoDTO") {
+            // if (tipo == "PersonajeDTO" || tipo == "EnemigoDTO") {
+            if (tipo != "MejoraDTO") {
                 let anim: PIXI.AnimatedSprite;
 
-                // Si es un enemigo elige la animación "Idle_izq", si no pondra "Idle"
-                if (tipo == "EnemigoDTO") {
-                    anim = new PIXI.AnimatedSprite(sheet.animations['Idle_derch']);
-                } else {
-                    anim = new PIXI.AnimatedSprite(sheet.animations['Idle']);
-                }
+                // Escoge la animación
+                anim = new PIXI.AnimatedSprite(sheet.animations['Idle_derch']);
 
                 anim.anchor.set(0.5);
                 anim.x = app.screen.width / 2;
@@ -135,6 +136,7 @@ onMounted(async () => {
                 imagen.y = app.screen.height / 2;
                 app.stage.addChild(imagen);
             }
+
 
         } catch (error) {
             console.error('Ha ocurrido un error:', error);

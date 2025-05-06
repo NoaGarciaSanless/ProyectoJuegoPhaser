@@ -7,8 +7,8 @@ export class MejoraDTO {
     public cantidadBase: number;
     public cantidadPorNivel: number;
 
-    public urlSprites: string;
-    public urlJSON: string;
+    public spriteURL: string;
+    public jsonURL: string;
 
     public constructor(
         id?: string,
@@ -28,8 +28,8 @@ export class MejoraDTO {
         this.cantidadBase = cantidadBase || 0;
         this.cantidadPorNivel = cantidadPorNivel || 0;
 
-        this.urlSprites = urlSprites || "";
-        this.urlJSON = urlJSON || "";
+        this.spriteURL = urlSprites || "";
+        this.jsonURL = urlJSON || "";
     }
 
     aObjetoJS() {
@@ -42,8 +42,8 @@ export class MejoraDTO {
             cantidadBase: this.cantidadBase,
             cantidadPorNivel: this.cantidadPorNivel,
 
-            urlSprites: this.urlSprites,
-            urlJSON: this.urlJSON,
+            urlSprites: this.spriteURL,
+            urlJSON: this.jsonURL,
         };
     }
 }
