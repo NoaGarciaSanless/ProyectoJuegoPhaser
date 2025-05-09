@@ -5,7 +5,7 @@ import EscenaBatalla from "./BatallaEscena";
 
 // Plugin para crear elementos y hacer textos de colores
 import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
-import { ObjetoDTO } from "../../DTOs/ObjetoDTO";
+import { IObjeto } from "../../DTOs/ObjetoDTO";
 
 export default class BatallaHUD extends Phaser.Scene {
     rexUI: RexUIPlugin;
@@ -25,8 +25,8 @@ export default class BatallaHUD extends Phaser.Scene {
 
     // Inventario del jugador
     inventarioJugadorMax: number = 0;
-    listaInventario: Record<string, ObjetoDTO> = {};
-    arrayInventario: Array<ObjetoDTO> = [];
+    listaInventario: Record<string, IObjeto> = {};
+    arrayInventario: Array<IObjeto> = [];
     inventario: any;
 
     // Otras escenas

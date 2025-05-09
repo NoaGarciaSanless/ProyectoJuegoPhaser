@@ -3,7 +3,7 @@ import { GameObjects } from "phaser";
 import Phaser from "phaser";
 import BatallaHUD from "./BatallaHUD";
 
-import { ObjetoDTO } from "../../DTOs/ObjetoDTO";
+import { IObjeto } from "../../DTOs/ObjetoDTO";
 
 // Turnos de la batalla
 enum EstadoBatalla {
@@ -41,7 +41,7 @@ export default class EscenaBatalla extends Phaser.Scene {
 
     inventarioBatallaJugadorMax: number = 10;
 
-    inventario: Record<string, ObjetoDTO> = {
+    inventario: Record<string, IObjeto> = {
         pocion_pq: {
             nombre: "Small Potion",
             imagen: "Vida_sml",
@@ -206,7 +206,7 @@ export default class EscenaBatalla extends Phaser.Scene {
         });
 
         // Usar un objeto
-        this.events.on("use-item", (item: ObjetoDTO) => {
+        this.events.on("use-item", (item: IObjeto) => {
             item.efecto();
         });
     }

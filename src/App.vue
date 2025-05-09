@@ -32,6 +32,7 @@ function actualizarUsuarioLoggeado(nombreUsuario: string) {
 
 function cerrarSesion() {
     cerrarSesionUsuario();
+    location.reload();
     nombreUsuarioLogeado.value = "";
 }
 

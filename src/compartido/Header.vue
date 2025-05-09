@@ -16,7 +16,7 @@ function cerrarSesion() {
     <div id="componeteHeader">
         <h1>Dominios Místicos (provisional)</h1>
 
-        <p>{{ login }}</p>
+        <p id="nomUsuario">{{ login }}</p>
         <button id="loginoutBTN" :class="login ? 'cerrarSesion' : 'iniciarSesion'">
             <span v-if="login" @click="cerrarSesion">Cerrar sesión</span>
             <span v-else>Iniciar sesión</span>
@@ -29,9 +29,6 @@ function cerrarSesion() {
 @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
 
 #componeteHeader {
-    /* width: 100vw;
-    height: 100%; */
-
     padding: 10px;
 
     background-color: #574d4f;
@@ -40,6 +37,11 @@ function cerrarSesion() {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+}
+
+#nomUsuario{
+    font-family: "Nunito Sans", sans-serif;
+
 }
 
 #loginoutBTN {

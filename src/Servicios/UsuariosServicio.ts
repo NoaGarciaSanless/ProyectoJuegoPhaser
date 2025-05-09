@@ -57,7 +57,7 @@ export function registrarUsuario(
                         displayName: nombre,
                     });
 
-                    console.log(credenciales.user);
+                    // console.log(credenciales.user);
 
                     resolve(credenciales.user.displayName);
                 })
@@ -132,8 +132,8 @@ export function iniciarSesionConUsuario(login: string, contrasenha: string) {
 
             signInWithEmailAndPassword(auth, correo, contrasenha)
                 .then((credenciales) => {
-                    console.log(credenciales.user);
-                    console.log("Usuario ha iniciado sesión");
+                    // console.log(credenciales.user);
+                    // console.log("Usuario ha iniciado sesión");
 
                     resolve(credenciales.user.displayName);
                 })

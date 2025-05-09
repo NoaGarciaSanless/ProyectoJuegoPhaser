@@ -1,18 +1,7 @@
 import { EnemigoDTO } from "../DTOs/EnemigoDTO";
 import { PersonajeDTO } from "../DTOs/PersonajeDTO";
 import { auth, db } from "./ConexionFirebase";
-import {
-    collection,
-    doc,
-    endAt,
-    getDoc,
-    getDocs,
-    orderBy,
-    query,
-    setDoc,
-    startAt,
-    where,
-} from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 
 // Recoge personajes, luego filtra por nombre y devulve los que coincidan
 export function recogerPersonajes(nombre?: string) {
@@ -51,7 +40,9 @@ export function recogerPersonajes(nombre?: string) {
 
                 if (nombre != null && nombre != "") {
                     lista = lista.filter((personaje) =>
-                        personaje.nombre.includes(nombre?.trim())
+                        personaje.nombre
+                            .toLowerCase()
+                            .includes(nombre?.trim().toLowerCase())
                     );
                 }
 
@@ -105,7 +96,9 @@ export function recogerEnemigos(nombre?: string) {
 
                 if (nombre != null && nombre != "") {
                     lista = lista.filter((personaje) =>
-                        personaje.nombre.includes(nombre?.trim())
+                        personaje.nombre
+                            .toLowerCase()
+                            .includes(nombre?.trim().toLowerCase())
                     );
                 }
 
@@ -147,7 +140,9 @@ export function filtrarLista(nombre: string, tipo: string) {
 
                     if (nombre != null && nombre != "") {
                         lista = lista.filter((dato: any) =>
-                            dato.nombre.includes(nombre?.trim())
+                            dato.nombre
+                                .toLowerCase()
+                                .includes(nombre?.trim().toLowerCase())
                         );
                     }
 
@@ -173,3 +168,4 @@ export function filtrarLista(nombre: string, tipo: string) {
         }
     });
 }
+

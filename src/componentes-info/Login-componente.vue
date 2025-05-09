@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref } from "vue";
 
-import { registrarUsuario, iniciarSesionConUsuario, comprobarUsuario } from '../Servicios/UsuariosServicio';
-
+import {
+    registrarUsuario,
+    iniciarSesionConUsuario,
+    comprobarUsuario,
+} from "../Servicios/UsuariosServicio";
 
 // Eventos
-const emit = defineEmits(['usuarioLogeado']);
+const emit = defineEmits(["usuarioLogeado"]);
 
 // Variables de vista
 let esLoginVista = ref(true);
@@ -23,8 +26,6 @@ const emailRegistro = ref("");
 const contrasenhaRegistro = ref("");
 const contrasenhaVRegistro = ref("");
 
-
-
 // Funciones------------------------------------------
 
 // Manejar la vista
@@ -40,7 +41,6 @@ function vaciarFormularios() {
     emailRegistro.value = "";
     contrasenhaRegistro.value = "";
     contrasenhaVRegistro.value = "";
-
 }
 
 // Registro y login-----------------------------------
@@ -60,7 +60,8 @@ function registrar() {
         return;
     }
     if (contrasenhaRegistro.value.length < 8) {
-        mensajesError.value.registro = "La contraseña debe tener al menos 8 caracteres";
+        mensajesError.value.registro =
+            "La contraseña debe tener al menos 8 caracteres";
         return;
     }
     if (contrasenhaRegistro.value !== contrasenhaVRegistro.value) {
@@ -68,7 +69,11 @@ function registrar() {
         return;
     }
 
-    registrarUsuario(nombreRegistro.value, emailRegistro.value, contrasenhaRegistro.value)
+    registrarUsuario(
+        nombreRegistro.value,
+        emailRegistro.value,
+        contrasenhaRegistro.value
+    )
         .then((resultado) => {
             console.log(resultado);
             emit("usuarioLogeado", resultado);
@@ -76,20 +81,16 @@ function registrar() {
         })
         .catch((error) => {
             console.log(error);
-
         });
-
-
 }
 
 // Loggea al usuario
 function iniciarSesion() {
-
-
     mensajesError.value.login = "";
 
     if (!nombreLogin.value.trim()) {
-        mensajesError.value.login = "El nombre de usuario o correo es requerido";
+        mensajesError.value.login =
+            "El nombre de usuario o correo es requerido";
         return;
     }
 
@@ -98,38 +99,27 @@ function iniciarSesion() {
     //     return;
     // }
 
-
-
     iniciarSesionConUsuario(nombreLogin.value, contrasenhaLogin.value)
         .then((resultado) => {
             console.log(resultado);
             emit("usuarioLogeado", resultado);
-
-        }
-        )
+        })
         .catch((error) => {
-            if (typeof (error) === "string") {
-
+            if (typeof error === "string") {
                 mensajesError.value.login = error;
-
             }
         });
-
 }
-
 
 onMounted(async () => {
     let hayUsuario = await comprobarUsuario();
 
     emit("usuarioLogeado", hayUsuario);
-
-
 });
 </script>
 
 <template>
     <div id="componeteLogin">
-
         <div class="contenedorTransicion" aria-live="polite">
             <transition name="fade" mode="out-in">
                 <div id="login" v-if="esLoginVista" key="login">
@@ -137,25 +127,45 @@ onMounted(async () => {
                         <h3>Login</h3>
                         <form>
                             <div class="campo">
-                                <label for="loginLogin">Usuario o email: </label>
-                                <input type="text" id="loginLogin" v-model="nombreLogin">
+                                <label for="loginLogin"
+                                    >Usuario o email:
+                                </label>
+                                <input
+                                    type="text"
+                                    id="loginLogin"
+                                    v-model="nombreLogin"
+                                />
                             </div>
 
                             <div class="campo">
-                                <label for="contrasenhaLogin">Contraseña: </label>
-                                <input type="password" id="contrasenhaLogin" v-model="contrasenhaLogin">
+                                <label for="contrasenhaLogin"
+                                    >Contraseña:
+                                </label>
+                                <input
+                                    type="password"
+                                    id="contrasenhaLogin"
+                                    v-model="contrasenhaLogin"
+                                />
                             </div>
 
-                            <p v-if="mensajesError.login">{{ mensajesError.login }}</p>
+                            <p v-if="mensajesError.login">
+                                {{ mensajesError.login }}
+                            </p>
 
-                            <button @click.prevent="iniciarSesion" class="enviarFormBTN">Login</button>
+                            <button
+                                @click.prevent="iniciarSesion"
+                                class="enviarFormBTN"
+                            >
+                                Login
+                            </button>
                         </form>
-
                     </div>
 
                     <div id="seccionRegistro">
                         <span>¿No tienes cuenta?</span>
-                        <button @click="alternarFormulario" class="registro">Registrarse</button>
+                        <button @click="alternarFormulario" class="registro">
+                            Registrarse
+                        </button>
                     </div>
                 </div>
 
@@ -165,42 +175,70 @@ onMounted(async () => {
                         <form>
                             <div class="campo">
                                 <label for="loginRegistro">Usuario: </label>
-                                <input type="text" id="loginRegistro" v-model="nombreRegistro">
+                                <input
+                                    type="text"
+                                    id="loginRegistro"
+                                    v-model="nombreRegistro"
+                                />
                             </div>
 
                             <div class="campo">
                                 <label for="emailRegistro">Email: </label>
-                                <input type="email" id="emailRegistro" v-model="emailRegistro">
+                                <input
+                                    type="email"
+                                    id="emailRegistro"
+                                    v-model="emailRegistro"
+                                />
                             </div>
 
                             <div class="campo">
-                                <label for="contrasenhaRegistro">Contraseña: </label>
-                                <input type="password" id="contrasenhaRegistro" v-model="contrasenhaRegistro">
+                                <label for="contrasenhaRegistro"
+                                    >Contraseña:
+                                </label>
+                                <input
+                                    type="password"
+                                    id="contrasenhaRegistro"
+                                    v-model="contrasenhaRegistro"
+                                />
                             </div>
 
                             <div class="campo">
-                                <label for="contrasenhaVRegistro">Verifíca contraseña: </label>
-                                <input type="password" id="contrasenhaVRegistro" v-model="contrasenhaVRegistro">
+                                <label for="contrasenhaVRegistro"
+                                    >Verifíca contraseña:
+                                </label>
+                                <input
+                                    type="password"
+                                    id="contrasenhaVRegistro"
+                                    v-model="contrasenhaVRegistro"
+                                />
                             </div>
 
-                            <p v-if="mensajesError.registro" class="error">{{ mensajesError.registro }}</p>
+                            <p v-if="mensajesError.registro" class="error">
+                                {{ mensajesError.registro }}
+                            </p>
 
-                            <button @click.prevent="registrar" class="enviarFormBTN">Registrarse</button>
+                            <button
+                                @click.prevent="registrar"
+                                class="enviarFormBTN"
+                            >
+                                Registrarse
+                            </button>
                         </form>
                     </div>
 
                     <div class="opciones">
-                        <button @click="alternarFormulario" class="cancelar">Cancelar</button>
+                        <button @click="alternarFormulario" class="cancelar">
+                            Cancelar
+                        </button>
                     </div>
                 </div>
             </transition>
         </div>
     </div>
-
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap");
 
 /* Contenedor principal */
 #componeteLogin {
@@ -213,7 +251,6 @@ onMounted(async () => {
     justify-content: center;
     align-items: center;
 }
-
 
 /* Contenedor para la transición */
 .contenedorTransicion {
@@ -253,17 +290,24 @@ onMounted(async () => {
 }
 
 .contenedorForm {
+    width: 100%;
+
     padding: 20px;
 
     display: flex;
     flex-direction: column;
     align-items: center;
 
-
     border: 1px solid black;
     border-radius: 10px;
 }
 
+form {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
 /* Estilo de los componetes de los formularios */
 .campo {
@@ -279,20 +323,14 @@ onMounted(async () => {
     flex: 1;
     margin-top: 10%;
 
-
     display: flex;
     flex-direction: row;
     gap: 10px;
 }
 
-form {
-    flex: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
 .enviarFormBTN {
+    cursor: pointer;
+
     width: 50%;
     margin-top: 5%;
 
@@ -302,10 +340,13 @@ form {
     border-radius: 5px;
 }
 
+.enviarFormBTN:hover {
+    background-color: #7ff07f;
+    border: #7ff07f;
+}
 
 input {
     width: 50%;
-
 }
 
 /* Estilos botones */
@@ -323,7 +364,6 @@ button.registro {
 button.registro:hover {
     background-color: #ecc377;
     border: #ecc377;
-
 }
 
 button.cancelar {
@@ -335,12 +375,11 @@ button.cancelar {
     border: #d88564;
 
     border-radius: 2px;
-
 }
 
 button.cancelar:hover {
     background-color: #ac694e;
     border: #ac694e;
-
 }
 </style>
+
