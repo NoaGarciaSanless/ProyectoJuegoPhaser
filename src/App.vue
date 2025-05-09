@@ -4,10 +4,10 @@ import { nextTick, ref } from 'vue';
 
 
 import PhaserGame from './juego/PhaserGame.vue';
-import LoginComponente from './componentes-info/Login-componente.vue';
-import Header from './compartido/Header.vue';
+import LoginComponente from './componentes-info/Login-componente/Login-componente.vue';
+import Header from './compartido/Header/Header.vue';
 import { cerrarSesionUsuario } from './Servicios/UsuariosServicio';
-import GuiaComponente from './componentes-info/Guia-componente.vue';
+import GuiaComponente from './componentes-info/Guia-componente/Guia-componente.vue';
 
 
 //  References to the PhaserGame component (game and scene are exposed)

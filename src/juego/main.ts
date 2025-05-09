@@ -4,6 +4,7 @@ import BatallaHUD from "./escenas/BatallaHUD";
 
 // Plugin to change the color in some text easily
 import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
+import InicioEscena from "./escenas/InicioEscena";
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -18,7 +19,7 @@ const config: Phaser.Types.Core.GameConfig = {
     pixelArt: true,
     parent: "game-container",
     backgroundColor: "#FFFFFF",
-    scene: [EscenaBatalla, BatallaHUD],
+    scene: [InicioEscena, EscenaBatalla, BatallaHUD],
     plugins: {
         scene: [
             {
@@ -35,3 +36,4 @@ const StartGame = (parent: string) => {
 };
 
 export default StartGame;
+

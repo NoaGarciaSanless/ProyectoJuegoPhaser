@@ -2,9 +2,9 @@
 import * as PIXI from "pixi.js";
 import { onMounted, onBeforeUnmount, ref } from "vue";
 
-import { EnemigoDTO } from "../DTOs/EnemigoDTO";
-import { MejoraDTO } from "../DTOs/MejoraDTO";
-import { PersonajeDTO } from "../DTOs/PersonajeDTO";
+import { EnemigoDTO } from "../../DTOs/EnemigoDTO";
+import { MejoraDTO } from "../../DTOs/MejoraDTO";
+import { PersonajeDTO } from "../../DTOs/PersonajeDTO";
 
 // Props -------------------------------------
 const props = defineProps<{
@@ -179,88 +179,5 @@ onBeforeUnmount(() => {
     </div>
 </template>
 
-<style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Pixelify+Sans:wght@400..700&display=swap");
-
-.tarjeta {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-
-    height: fit-content;
-    width: fit-content;
-
-    border: 1px solid black;
-    border-radius: 10px;
-
-    padding: 10px;
-    margin: 10px8;
-}
-
-.nombre {
-    font-family: "MyCustomFont", sans-serif;
-    font-size: 0.9em;
-}
-
-.contenedorSprite {
-    width: 100px;
-    height: 150px;
-}
-
-/* Estilos de la información adicional */
-.datos {
-    width: 100%;
-
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.datos .titulo {
-    font-family: "MyCustomFont", sans-serif;
-
-    margin: 0;
-    padding: 0;
-
-    font-size: large;
-    font-weight: bold;
-}
-
-.datos p {
-    font-family: "Pixelify Sans", sans-serif;
-
-    margin: 0;
-    padding: 0;
-
-    margin-left: 10px;
-}
-
-.datos button {
-    width: 60%;
-
-    margin-right: 10px;
-    margin-top: 10px;
-
-    align-self: flex-end;
-}
-
-.verBTN {
-    cursor: pointer;
-
-    font-size: 0.9em;
-
-    background-color: #e2c16b;
-    border: #e2c16b;
-    border-radius: 5px;
-
-    padding: 2px;
-}
-
-.verBTN:hover {
-    background-color: #e7ca81;
-}
-</style>
+<style src="./TarjetaDato.css" scoped></style>
 

@@ -1,0 +1,92 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap");
+
+#componeteHeader {
+    padding: 10px 20px;
+
+    background-color: #574d4f;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    border-bottom: 2px solid #333;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#componeteHeader h1 {
+    font-size: 1.8rem;
+    color: #fff;
+
+    margin: 0;
+
+    text-transform: uppercase;
+}
+
+#nomUsuario {
+    font-family: "Nunito Sans", sans-serif;
+    font-size: 1.2rem;
+    color: #fff;
+
+    margin-right: 20px;
+
+    text-align: right;
+}
+
+#loginoutBTN {
+    cursor: pointer;
+
+    font-family: "Nunito Sans", sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+
+    padding: 10px 20px;
+    margin-left: 20px;
+
+    border: none;
+    border-radius: 5px;
+
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#loginoutBTN.iniciarSesion {
+    background-color: #6ee86e;
+    color: #fff;
+}
+
+#loginoutBTN.iniciarSesion:hover {
+    background-color: #80f180;
+    transform: scale(1.05);
+}
+
+#loginoutBTN.cerrarSesion {
+    background-color: #e76262;
+    color: #fff;
+}
+
+#loginoutBTN.cerrarSesion:hover {
+    background-color: #e44a4a;
+    transform: scale(1.05);
+}
+
+
+@media (max-width: 768px) {
+    #componeteHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px;
+    }
+
+    #componeteHeader h1 {
+        font-size: 1.5rem;
+    }
+
+    #nomUsuario {
+        font-size: 1rem;
+    }
+
+    #loginoutBTN {
+        font-size: 0.9rem;
+        margin-top: 10px;
+    }
+}

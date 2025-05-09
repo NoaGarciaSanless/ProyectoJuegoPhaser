@@ -1,0 +1,143 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap");
+
+/* Contenedor principal */
+#componeteLogin {
+    width: 100%;
+    height: 100%;
+
+    font-family: "Nunito Sans", sans-serif;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Contenedor para la transición */
+.contenedorTransicion {
+    position: relative;
+    width: 400px;
+    /* Ancho fijo para evitar cambios de tamaño */
+    min-height: 400px;
+    /* Altura mínima para consistencia */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Efectos para la transición entre formularios */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+/* Estilo de los contenedores de los formularios */
+#login,
+#registro {
+    width: fit-content;
+    padding: 40px;
+    background-color: white;
+    z-index: 100;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.contenedorForm {
+    width: 100%;
+
+    padding: 20px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    border: 1px solid black;
+    border-radius: 10px;
+}
+
+form {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Estilo de los componetes de los formularios */
+.campo {
+    width: 100%;
+
+    display: flex;
+    justify-content: space-between;
+
+    margin: 10px;
+}
+
+#seccionRegistro {
+    flex: 1;
+    margin-top: 10%;
+
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.enviarFormBTN {
+    cursor: pointer;
+
+    width: 50%;
+    margin-top: 5%;
+
+    background-color: #71dd71;
+    border: #71dd71;
+
+    border-radius: 5px;
+}
+
+.enviarFormBTN:hover {
+    background-color: #7ff07f;
+    border: #7ff07f;
+}
+
+input {
+    width: 50%;
+}
+
+/* Estilos botones */
+button.registro {
+    cursor: pointer;
+
+    font-size: medium;
+
+    background-color: #d8b064;
+    border: #d8b064;
+
+    border-radius: 2px;
+}
+
+button.registro:hover {
+    background-color: #ecc377;
+    border: #ecc377;
+}
+
+button.cancelar {
+    cursor: pointer;
+
+    font-size: medium;
+
+    background-color: #d88564;
+    border: #d88564;
+
+    border-radius: 2px;
+}
+
+button.cancelar:hover {
+    background-color: #ac694e;
+    border: #ac694e;
+}
