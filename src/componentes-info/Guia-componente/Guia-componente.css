@@ -173,7 +173,7 @@
 .paginacion {
     font-family: "Nunito Sans", sans-serif;
 
-    margin-top: 10px;
+    margin-top: 20px;
 
     display: flex;
     flex-direction: row;
@@ -190,6 +190,7 @@
 /* Estilo de cada elemento de la lista */
 .elemento {
     height: 100%;
+
     box-sizing: border-box;
 
     display: flex;
@@ -203,15 +204,20 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* Elemento de rellemon */
+.relleno{
+    flex: 0.3;
+}
+
 /* Detalles del elemento seleccionado */
 #detalles {
     position: relative;
 
-    font-family: "MyCustomFont", sans-serif;
+    font-family: "MiFuente", sans-serif;
 
     height: fit-content;
 
-    flex: 1;
+    flex: 1.2;
 
     margin: 10px;
     padding: 10px;

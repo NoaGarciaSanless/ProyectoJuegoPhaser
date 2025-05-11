@@ -64,6 +64,9 @@ async function cargarDatos() {
 
 // Filtra por nombre y tipo
 async function filtrar() {
+
+    cerrarDetalles();
+
     // Oculta la lista (principalmente para que se reinicie)
     mostrarLista.value = false;
 
@@ -172,39 +175,26 @@ onMounted(() => {
         <div class="contenido">
             <div class="contenedorLista" v-if="mostrarLista">
                 <div id="lista">
-                    <TarjetaDato
-                        class="elemento"
-                        v-for="(dato) in listaPaginada"
-                        :key="`tarjeta-${dato.nombre}`"
-                        :dato="dato"
-                        @mostrar-detalles="configurarElementoDetalles"
-                    >
+                    <TarjetaDato class="elemento" v-for="(dato) in listaPaginada" :key="`tarjeta-${dato.nombre}`"
+                        :dato="dato" @mostrar-detalles="configurarElementoDetalles">
                     </TarjetaDato>
                 </div>
 
                 <div class="paginacion">
-                    <button
-                        class="paginacionBTN"
-                        @click="paginaActual--"
-                        :disabled="paginaActual === 1"
-                    >
+                    <button class="paginacionBTN" @click="paginaActual--" :disabled="paginaActual === 1">
                         &#9664;
                     </button>
                     <span>Página {{ paginaActual }} de {{ totalPaginas }}</span>
-                    <button
-                        class="paginacionBTN"
-                        @click="paginaActual++"
-                        :disabled="paginaActual === totalPaginas"
-                    >
+                    <button class="paginacionBTN" @click="paginaActual++" :disabled="paginaActual === totalPaginas">
                         &#9654;
                     </button>
                 </div>
             </div>
 
+            <div class="relleno" v-if="mostrarDetalles"></div>
+
             <div id="detalles" v-if="mostrarDetalles">
-                <span id="cerrarDetallesBTN" @click="cerrarDetalles"
-                    >&times;</span
-                >
+                <span id="cerrarDetallesBTN" @click="cerrarDetalles">&times;</span>
                 <div id="informacionElemento" v-if="elementoDetalles">
                     <h3>{{ elementoDetalles.nombre }}</h3>
 
@@ -213,68 +203,64 @@ onMounted(() => {
                         <p>{{ elementoDetalles.descripcion }}</p>
                     </div>
 
-                    <div
-                        class="apartado"
-                        v-if="comprobarElementoEstadisticas()"
-                    >
+                    <div class="apartado" v-if="comprobarElementoEstadisticas()">
                         <h4>Estadísticas</h4>
                         <div class="listaEstadisticasPersonaje">
                             <div class="estadistica">
                                 <span class="nomEst">Ataque base </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.ataqueBase
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Ataque por nivel </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.ataquePorNivel
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Defensa base </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.defensaBase
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Defensa por nivel </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.defensaPorNivel
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Ataque mágico base </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.ataqueMagicoBase
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <div class="estadistica">
-                                <span class="nomEst"
-                                    >Ataque mágico por nivel
+                                <span class="nomEst">Ataque mágico por nivel
                                 </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.ataqueMagicoPorNivel
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Precisión base:</span>
                                 <span class="valorEst">{{
                                     elementoDetalles.precisionBase
-                                }}</span>
+                                    }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Crítico base </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.criticoBase
-                                }}</span>
+                                    }}</span>
                             </div>
                         </div>
                     </div>

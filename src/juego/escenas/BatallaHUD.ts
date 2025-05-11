@@ -200,7 +200,7 @@ export default class BatallaHUD extends Phaser.Scene {
         // Victory GameOver Textos
         this.events.on("game_over", () => {
             let text = this.add.text(width, height / 2, "Game Over!", {
-                fontFamily: "MyCustomFont",
+                fontFamily: "MiFuente",
                 fontSize: "96px",
                 color: "#ffffff",
             });
@@ -215,7 +215,7 @@ export default class BatallaHUD extends Phaser.Scene {
 
         this.events.on("victory", () => {
             let text = this.add.text(0 - width * 0.2, height / 2, "Victory!", {
-                fontFamily: "MyCustomFont",
+                fontFamily: "MiFuente",
                 fontSize: "96px",
                 color: "#ffffff",
             });
@@ -261,7 +261,7 @@ export default class BatallaHUD extends Phaser.Scene {
                 height / 2,
                 textoProcesado,
                 {
-                    fontFamily: "MyCustomFont",
+                    fontFamily: "MiFuente",
                     fontSize: "64px",
                     color: "#ffffff",
                 }
@@ -395,7 +395,7 @@ export default class BatallaHUD extends Phaser.Scene {
                                 alto / 1.5,
                                 item.cantidad,
                                 {
-                                    fontFamily: "MyCustomFont",
+                                    fontFamily: "MiFuente",
                                     fontSize: "32px",
                                     color: "#000000",
                                 }
@@ -494,7 +494,7 @@ export default class BatallaHUD extends Phaser.Scene {
             textoMensaje = `Turn ${cantidad}`;
 
             let mensaje = this.rexUI.add.BBCodeText(0, 0, textoMensaje, {
-                fontFamily: "MyCustomFont",
+                fontFamily: "MiFuente",
                 fontSize: "32px",
                 color: "#ffffff",
             });
@@ -541,7 +541,7 @@ export default class BatallaHUD extends Phaser.Scene {
         }
 
         let mensaje = this.rexUI.add.BBCodeText(0, 0, textoMensaje, {
-            fontFamily: "MyCustomFont",
+            fontFamily: "MiFuente",
             fontSize: "24px",
             color: "#ffffff",
         });
@@ -584,7 +584,7 @@ export default class BatallaHUD extends Phaser.Scene {
                     ),
                 },
                 text: this.add.text(0, 0, `${vida}HP`, {
-                    fontFamily: "MyCustomFont",
+                    fontFamily: "MiFuente",
                     fontSize: "16px",
                     color: "#000",
                 }),

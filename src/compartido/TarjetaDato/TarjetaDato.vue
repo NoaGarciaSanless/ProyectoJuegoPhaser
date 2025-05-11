@@ -163,15 +163,18 @@ onBeforeUnmount(() => {
 <template>
     <div class="tarjeta">
         <h3 class="nombre">{{ dato.nombre }}</h3>
-        <div class="contenedorSprite" ref="contenedorSprite">
+        <div class="fondo">
+
+            <div v-if="conImagen" class="contenedorSprite" ref="contenedorSprite"></div>
             <span v-if="!conImagen">
-                No hay un sprite disponible para mostrar</span
-            >
+                No hay un sprite disponible para mostrar</span>
+
         </div>
+
 
         <div class="datos">
             <p class="titulo">Descripción</p>
-            <p>{{ recortarDescripcion() }}</p>
+            <p class="descripcion">{{ recortarDescripcion() }}</p>
             <button class="verBTN" @click="$emit('mostrarDetalles', dato)">
                 Ver detalles
             </button>
@@ -180,4 +183,3 @@ onBeforeUnmount(() => {
 </template>
 
 <style src="./TarjetaDato.css" scoped></style>
-

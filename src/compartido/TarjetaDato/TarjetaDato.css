@@ -4,24 +4,42 @@
 .tarjeta {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     gap: 10px;
 
     height: fit-content;
     width: fit-content;
 
-    border: 1px solid black;
-    border-radius: 10px;
+    padding: 20px;
+    margin: 5px;
 
-    padding: 10px;
-    margin: 10px8;
+    background-image: url("https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1746988498/fondoTarjeta_iyg022.png");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    image-rendering: pixelated;
 }
 
 .nombre {
-    font-family: "MyCustomFont", sans-serif;
+    font-family: "MiFuente", sans-serif;
     font-size: 0.9em;
 }
+
+.fondo {
+
+    height: 100%;
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background-image: url("https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1746989043/fondoSlot_duhivg.png");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    image-rendering: pixelated;
+}
+
 
 .contenedorSprite {
     width: 100px;
@@ -38,7 +56,7 @@
 }
 
 .datos .titulo {
-    font-family: "MyCustomFont", sans-serif;
+    font-family: "MiFuente", sans-serif;
 
     margin: 0;
     padding: 0;
@@ -47,13 +65,13 @@
     font-weight: bold;
 }
 
-.datos p {
+.datos .descripcion {
     font-family: "Pixelify Sans", sans-serif;
+
+    height: 80px;
 
     margin: 0;
     padding: 0;
-
-    margin-left: 10px;
 }
 
 .datos button {
