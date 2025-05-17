@@ -1,7 +1,7 @@
 import { GameObjects, RIGHT } from "phaser";
 
 import Phaser from "phaser";
-import EscenaBatalla from "./BatallaEscena";
+import BatallaEscena from "./BatallaEscena";
 
 // Plugin para crear elementos y hacer textos de colores
 import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
@@ -30,14 +30,17 @@ export default class BatallaHUD extends Phaser.Scene {
     inventario: any;
 
     // Otras escenas
-    batallaEscena: EscenaBatalla;
+    batallaEscena: BatallaEscena;
 
     // Variables para controlar los botones
     puedeAtacar = true;
     invAbierto = false;
 
     // Función para distribuir los botones en el contenedor de botones
-    distribuirElementos(botones: GameObjects.Sprite[], anchoContenedor: number) {
+    distribuirElementos(
+        botones: GameObjects.Sprite[],
+        anchoContenedor: number
+    ) {
         const espaciado = 20;
         const anchoTotal = botones.reduce(
             (acc, boton) => acc + boton.displayWidth,
@@ -93,7 +96,7 @@ export default class BatallaHUD extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // Otras escenas
-        this.batallaEscena = this.scene.get("EscenaBatalla") as EscenaBatalla;
+        this.batallaEscena = this.scene.get("EscenaBatalla") as BatallaEscena;
 
         this.contenedorTexto = this.add.container(width / 2, 0);
 
@@ -253,7 +256,7 @@ export default class BatallaHUD extends Phaser.Scene {
             }
         });
 
-        // Otro tipo de mensajes 
+        // Otro tipo de mensajes
         this.events.on("extra_text", (text: string) => {
             let textoProcesado = `[color=yellow]${text}[/color]`;
             let mensaje = this.rexUI.add.BBCodeText(
@@ -314,7 +317,10 @@ export default class BatallaHUD extends Phaser.Scene {
         const padding = 20;
 
         // Otros elemnetos
-        let cabeceraInventario = this.crearHeaderInventario(invWidth, invHeight);
+        let cabeceraInventario = this.crearHeaderInventario(
+            invWidth,
+            invHeight
+        );
 
         // Inventario
         this.inventario = this.rexUI.add
@@ -417,7 +423,10 @@ export default class BatallaHUD extends Phaser.Scene {
                             clickOverlay.name = "clickOverlay";
 
                             clickOverlay.on("pointerdown", () => {
-                                scene.batallaEscena.events.emit("use-item", item);
+                                scene.batallaEscena.events.emit(
+                                    "use-item",
+                                    item
+                                );
 
                                 // Obtiene el texto del item para actualizar la cantidad
                                 let textoHijoItem = cellContainer?.list.find(

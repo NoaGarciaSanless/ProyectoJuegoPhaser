@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import Phaser from 'phaser';
-import { nextTick, ref } from 'vue';
+import { nextTick, onMounted, ref } from 'vue';
 
 
 import PhaserGame from './juego/PhaserGame.vue';
 import LoginComponente from './componentes-info/Login-componente/Login-componente.vue';
 import Header from './compartido/Header/Header.vue';
-import { cerrarSesionUsuario } from './Servicios/UsuariosServicio';
+import { cerrarSesionUsuario, comprobarUsuario } from './Servicios/UsuariosServicio';
 import GuiaComponente from './componentes-info/Guia-componente/Guia-componente.vue';
 
 
@@ -30,11 +30,16 @@ function actualizarUsuarioLoggeado(nombreUsuario: string) {
     nombreUsuarioLogeado.value = nombreUsuario;
 }
 
-function cerrarSesion() {
-    cerrarSesionUsuario();
+async function cerrarSesion() {
+    await cerrarSesionUsuario();
     location.reload();
     nombreUsuarioLogeado.value = "";
 }
+
+onMounted(async () => {
+    let hayUsuario: string = await comprobarUsuario();
+    nombreUsuarioLogeado.value = hayUsuario;
+});
 
 </script>
 
@@ -45,7 +50,7 @@ function cerrarSesion() {
 
         <div class="app-container">
 
-            <div class="game-container" :class="{ 'fullscreen': fullscreen }">
+            <div class="game-container" :class="{ 'fullscreen': fullscreen }" v-if="nombreUsuarioLogeado !== ''">
                 <PhaserGame ref="phaserRef" />
 
                 <button id="alternarPantalla" @click="alternarPantalla" class="fondoOscuro">
@@ -55,6 +60,10 @@ function cerrarSesion() {
                     </span>
 
                 </button>
+            </div>
+
+            <div class="sinSesion-container" v-else>
+                <span>Inicia sesión o registrate para jugar</span>
             </div>
 
             <div class="funcionlidades" v-show="!fullscreen">
@@ -115,6 +124,18 @@ function cerrarSesion() {
     z-index: 1000;
 }
 
+.sinSesion-container {
+    font-size: larger;
+
+    width: 50%;
+    height: 100%;
+
+    background-color: #000;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 .funcionlidades {
     width: 50%;
     height: 100%;

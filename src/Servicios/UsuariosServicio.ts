@@ -160,13 +160,13 @@ export function iniciarSesionConUsuario(login: string, contrasenha: string) {
 
 // Comprueba las sesiones, si hay usuario devuelve su nombre
 export function comprobarUsuario() {
-    return new Promise((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
         onAuthStateChanged(
             auth,
             (usuario) => {
                 if (usuario) {
                     console.log("Hay un usuario");
-                    resolve(usuario.displayName);
+                    resolve(usuario.displayName!);
                 } else {
                     console.log("No hay usuario");
                     resolve("");
@@ -181,6 +181,6 @@ export function comprobarUsuario() {
 }
 
 // Log out del usuario
-export function cerrarSesionUsuario() {
-    auth.signOut();
+export async function cerrarSesionUsuario() {
+    await auth.signOut();
 }

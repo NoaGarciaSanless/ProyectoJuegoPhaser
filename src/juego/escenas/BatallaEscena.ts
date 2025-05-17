@@ -14,7 +14,7 @@ enum EstadoBatalla {
     PantallaFin,
 }
 
-export default class EscenaBatalla extends Phaser.Scene {
+export default class BatallaEscena extends Phaser.Scene {
     // Sprites usados en la escena
     fondoBosque: GameObjects.Image;
     suelo: GameObjects.Image;
@@ -103,7 +103,7 @@ export default class EscenaBatalla extends Phaser.Scene {
         // Funciones ------------------------------------------
 
         // Crea un numero aleatorio de arboles
-        function crearArbolesAleatorio(this: EscenaBatalla) {
+        function crearArbolesAleatorio(this: BatallaEscena) {
             let numeroArboles = Math.trunc(Math.max(Math.random() * 4));
 
             let x: number[] = [];
@@ -348,7 +348,9 @@ export default class EscenaBatalla extends Phaser.Scene {
                 }, 500);
 
                 // Calcula el daño del ataque
-                let critico = this.calcularProbabilidad(this.probaCriticoJugador);
+                let critico = this.calcularProbabilidad(
+                    this.probaCriticoJugador
+                );
                 let ataqueTotal = this.ataqueBaseJugador * (critico ? 2 : 1);
 
                 // Baja la vida del enemigo

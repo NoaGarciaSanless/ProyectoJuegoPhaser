@@ -6,6 +6,8 @@ import { EnemigoDTO } from "../../DTOs/EnemigoDTO";
 import { MejoraDTO } from "../../DTOs/MejoraDTO";
 import { PersonajeDTO } from "../../DTOs/PersonajeDTO";
 
+import { Assets } from "../Assets";
+
 // Props -------------------------------------
 const props = defineProps<{
     dato: PersonajeDTO | EnemigoDTO | MejoraDTO;
@@ -27,6 +29,11 @@ const contenedorSprite = ref<HTMLDivElement | null>(null);
 
 // Imagen con animación
 let app: PIXI.Application<PIXI.Renderer> | null = null;
+
+
+// Variables para las imagenes
+const fondoRef = ref<HTMLElement | null>(null);
+const tarjetaRef = ref<HTMLElement | null>(null);
 
 // Funciones ---------------------------------
 
@@ -77,6 +84,15 @@ function recortarDescripcion() {
 // Hooks de VUE ------------------------------
 // Cuando se crea el componente, se crea la imagen con la animación
 onMounted(async () => {
+
+    if (fondoRef.value) {
+        fondoRef.value.style.backgroundImage = `url('${Assets.fondoImagenAnim_sprite}')`;
+    }
+
+    if (tarjetaRef.value) {
+        tarjetaRef.value.style.backgroundImage = `url('${Assets.fondoTarjeta_sprite}')`;
+    }
+
     app = new PIXI.Application();
     await app.init({
         width: 100,
@@ -161,9 +177,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="tarjeta">
+    <div class="tarjeta" ref="tarjetaRef">
         <h3 class="nombre">{{ dato.nombre }}</h3>
-        <div class="fondo">
+        <div class="fondo" ref="fondoRef">
 
             <div v-if="conImagen" class="contenedorSprite" ref="contenedorSprite"></div>
             <span v-if="!conImagen">
