@@ -17,5 +17,13 @@ export class Assets {
 
     // Assets pueblo --------------
     public static readonly sueloPueblo =
-        "https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1747577625/sueloPueblo_kah5nl.png";
+        "https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1747935906/sueloPueblo_kah5nl.png";
+
+    public static readonly casaHerrero =
+        "https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1747862560/CasaHerrero_rvyvmq.png";
+
+    public static readonly tp_json =
+        "https://res.cloudinary.com/juegoporturnosdaw-img/raw/upload/v1747937060/altar_teletransporte_booeqh.json";
+    public static readonly tp_sprite =
+        "https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1747937053/altar_teletransporte_hup7kc.png";
 }
