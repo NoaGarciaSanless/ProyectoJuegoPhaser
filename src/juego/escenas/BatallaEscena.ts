@@ -16,7 +16,7 @@ enum EstadoBatalla {
 
 export default class BatallaEscena extends Phaser.Scene {
     // Sprites usados en la escena
-    fondoBosque: GameObjects.Image;
+    fondo: GameObjects.Image;
     suelo: GameObjects.Image;
     personaje: GameObjects.Sprite;
     enemigo1: GameObjects.Sprite;
@@ -69,7 +69,17 @@ export default class BatallaEscena extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image("fondoBosque", "assets/backgrounds/bosque.png");
+
+        // Recarga el fondo
+        if (this.textures.exists("fondo")) {
+            this.textures.remove("fondo");
+        }
+        this.load.image("fondo", "assets/backgrounds/bosque.png");
+
+        // Recarga el suelo
+        if (this.textures.exists("suelo")) {
+            this.textures.remove("suelo");
+        }
         this.load.image("suelo", "assets/backgrounds/suelo.png");
 
         this.load.aseprite(
@@ -78,11 +88,18 @@ export default class BatallaEscena extends Phaser.Scene {
             "assets/decoraciones/assetsNaturaleza.json"
         );
 
+        // Recarga el sprite del jugador
+        if (this.textures.exists("jugador")) {
+            this.textures.remove("jugador");
+        }
         this.load.aseprite(
-            "encapuchado",
+            "jugador",
             "assets/characters/per_anim_phaser.png",
             "assets/characters/per_anim_phaser.json"
         );
+
+        console.log(this.textures.exists("jugador"));
+
 
         this.load.aseprite(
             "esquleto",
@@ -93,6 +110,15 @@ export default class BatallaEscena extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
+
+        // Limpia las animaciones
+        this.anims.anims.clear();
+
+
+        this.load.once('complete', () => {
+            console.log('✅ Carga completa.');
+            console.log('¿Jugador cargado?', this.textures.exists('jugador'));
+        });
 
         // Otras escenas
         this.batallaHUD = this.scene.get("BatallaHUD") as BatallaHUD;
@@ -126,12 +152,12 @@ export default class BatallaEscena extends Phaser.Scene {
         }
 
         // Fondo -----------------------------------------
-        this.fondoBosque = this.add.sprite(0, 0, "fondoBosque");
+        this.fondo = this.add.sprite(0, 0, "fondo");
 
-        this.fondoBosque.setOrigin(0, 0);
-        this.fondoBosque.setDisplaySize(width, height / 1.5);
+        this.fondo.setOrigin(0, 0);
+        this.fondo.setDisplaySize(width, height / 1.5);
 
-        const sueloY = this.fondoBosque.displayHeight;
+        const sueloY = this.fondo.displayHeight;
 
         this.suelo = this.add.sprite(0, sueloY, "suelo");
         this.suelo.setOrigin(0.1, 0.4);
@@ -151,7 +177,8 @@ export default class BatallaEscena extends Phaser.Scene {
         // Personajes -----------------------------------------
 
         // Esqueletos
-        this.anims.createFromAseprite("esquleto");
+        // this.anims.createFromAseprite("esquleto");
+        this.generarAnimacion("esquleto");
 
         this.enemigo1 = this.add
             .sprite(width / 1.5, height / 1.4, "esquleto", 16)
@@ -159,9 +186,7 @@ export default class BatallaEscena extends Phaser.Scene {
             .setScale(4, 4);
 
         this.enemigo1.anims.timeScale = 0.3;
-        this.enemigo1.play({ key: "Idle_izq", repeat: -1 });
-
-        this.reproducirAnimacionIdle(this.enemigo1, "Idle_izq");
+        this.reproducirAnimacionIdle(this.enemigo1, "esquleto", "Idle_izq");
 
         this.time.delayedCall(50, () => {
             this.crearBarraVida(
@@ -173,14 +198,16 @@ export default class BatallaEscena extends Phaser.Scene {
         });
 
         // Personaje
-        this.anims.createFromAseprite("encapuchado");
+        // this.anims.createFromAseprite("jugador");
+        this.generarAnimacion("jugador");
+
 
         this.personaje = this.add
-            .sprite(width / 3.5, height / 1.4, "encapuchado", 0)
+            .sprite(width / 3.5, height / 1.4, "jugador", 0)
             .setOrigin(0.5, 0.5)
             .setScale(4, 4);
 
-        this.reproducirAnimacionIdle(this.personaje, "Idle_combate");
+        this.reproducirAnimacionIdle(this.personaje, "jugador", "Idle_combate");
 
         this.time.delayedCall(50, () => {
             this.crearBarraVida(
@@ -246,7 +273,7 @@ export default class BatallaEscena extends Phaser.Scene {
                 console.log("Game Over");
 
                 this.batallaHUD?.events.emit("game_over");
-                this.reproducirAnimacion(this.personaje, "Derrota");
+                this.reproducirAnimacion(this.personaje, "jugador", "Derrota");
 
                 this.estadoActual = EstadoBatalla.PantallaFin;
                 this.siguienteTurno();
@@ -330,8 +357,8 @@ export default class BatallaEscena extends Phaser.Scene {
     // Logica para el ataque del personaje
     ataqueJugador(): Promise<void> {
         return new Promise(async (resolve) => {
-            await this.reproducirAnimacion(this.personaje, "Ataque");
-            this.reproducirAnimacionIdle(this.personaje, "Idle_combate");
+            await this.reproducirAnimacion(this.personaje, "jugador", "Ataque");
+            this.reproducirAnimacionIdle(this.personaje, "jugador", "Idle_combate");
 
             let fallo = this.calcularProbabilidad(this.probaFallarJugador);
 
@@ -381,8 +408,8 @@ export default class BatallaEscena extends Phaser.Scene {
     // Logica para el ataque del enemigo
     ataqueEnemigo(): Promise<void> {
         return new Promise(async (resolve) => {
-            await this.reproducirAnimacion(this.enemigo1, "Ataque_izq");
-            this.reproducirAnimacionIdle(this.enemigo1, "Idle_izq");
+            await this.reproducirAnimacion(this.enemigo1, "esquleto", "Ataque_izq");
+            this.reproducirAnimacionIdle(this.enemigo1, "esquleto", "Idle_izq");
 
             let fallo = this.calcularProbabilidad(this.probaFallarJugador);
 
@@ -394,11 +421,11 @@ export default class BatallaEscena extends Phaser.Scene {
                 }, 500);
             } else {
                 this.personaje.setTint(0xff0000);
-                await this.reproducirAnimacion(this.personaje, "Dañado");
+                await this.reproducirAnimacion(this.personaje, "jugador", "Dañado");
                 setTimeout(() => {
                     this.personaje.clearTint();
                 }, 500);
-                this.reproducirAnimacionIdle(this.personaje, "Idle_combate");
+                this.reproducirAnimacionIdle(this.personaje, "jugador", "Idle_combate");
 
                 // Calcula el daño del ataque
                 let critico = this.calcularProbabilidad(1);
@@ -440,18 +467,44 @@ export default class BatallaEscena extends Phaser.Scene {
         }
     }
 
+    // Genera animaciones individuales para cada elemento que las necesite y así evitar conflictos
+    async generarAnimacion(elemento: string) {
+        const animaciones = this.anims.createFromAseprite(elemento);
+        animaciones.forEach((animacion) => {
+            const nuevaKey = `${elemento}_${animacion.key}`;
+
+            this.anims.remove(animacion.key); // Opcional: limpia si ya existía
+
+            this.anims.create({
+                key: nuevaKey,
+                frames: animacion.frames.map((f) => ({
+                    key: f.textureKey,
+                    frame: f.frame.name,
+                    duration: f.duration
+                })),
+                frameRate: animacion.frameRate,
+                repeat: animacion.repeat,
+            });
+
+
+        })
+    }
+
     // Reproduce la animacion si el personaje la tiene
     reproducirAnimacion(
         personaje: GameObjects.Sprite,
+        nombreTextura: string,
         nombreAnimacion: string
     ): Promise<void> {
         return new Promise((resolve) => {
-            if (personaje.anims.animationManager.get(nombreAnimacion)) {
+            let animacion = `${nombreTextura}_${nombreAnimacion}`;
+
+            if (personaje.anims.animationManager.get(animacion)) {
                 personaje.anims.timeScale = 1;
-                personaje.play(nombreAnimacion);
+                personaje.play(animacion);
 
                 // Cuando acaba la animacion restaura la velocidad de las animaciones
-                personaje.once(`animationcomplete-${nombreAnimacion}`, () => {
+                personaje.once(`animationcomplete-${animacion}`, () => {
                     personaje.anims.timeScale = 0.3;
                     resolve();
                 });
@@ -467,12 +520,15 @@ export default class BatallaEscena extends Phaser.Scene {
     // Para animaciones idle
     reproducirAnimacionIdle(
         personaje: GameObjects.Sprite,
+        nombreTextura: string,
         nombreAnimacion: string
     ): Promise<void> {
         return new Promise((resolve) => {
-            if (personaje.anims.animationManager.get(nombreAnimacion)) {
+            let animacion = `${nombreTextura}_${nombreAnimacion}`;
+
+            if (personaje.anims.animationManager.get(animacion)) {
                 personaje.anims.timeScale = 0.3;
-                personaje.play({ key: nombreAnimacion, repeat: -1 });
+                personaje.play({ key: animacion, repeat: -1 });
 
                 resolve();
             } else {
@@ -483,11 +539,10 @@ export default class BatallaEscena extends Phaser.Scene {
         });
     }
 
-    update() {}
+    update() { }
 
     destroy() {
         this.events.removeAllListeners();
         this.children.removeAll();
-        this.textures.destroy();
     }
 }

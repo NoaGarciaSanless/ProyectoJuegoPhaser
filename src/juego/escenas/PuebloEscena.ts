@@ -50,7 +50,7 @@ export default class PuebloEscena extends Phaser.Scene {
         this.load.aseprite("tp", Assets.tp_sprite, Assets.tp_json);
     }
 
-    create() {
+    async create() {
         // Evita que Phaser capture teclas si estás escribiendo
         window.addEventListener(
             "keydown",
@@ -97,7 +97,8 @@ export default class PuebloEscena extends Phaser.Scene {
         casaHerrero.setOrigin(0, 0);
         casaHerrero.setScale(4, 4);
 
-        this.anims.createFromAseprite("tp");
+        // this.anims.createFromAseprite("tp");
+        this.generarAnimacion("tp");
         this.teletransporte = this.add.sprite(
             (this.suelo.scaleX * this.suelo.width) / 1.15,
             height / 1.47,
@@ -107,10 +108,11 @@ export default class PuebloEscena extends Phaser.Scene {
         this.teletransporte.setOrigin(0.5, 0.5);
         this.teletransporte.setScale(4, 4);
         this.teletransporte.anims.timeScale = 0.3;
-        this.teletransporte.play({ key: "Animacion_defecto", repeat: -1 });
+        this.teletransporte.play({ key: "tp_Animacion_defecto", repeat: -1 });
 
         // Jugador
-        this.anims.createFromAseprite("jugador");
+        // this.anims.createFromAseprite("jugador");
+        await this.generarAnimacion("jugador");
 
         this.jugador = this.add.sprite(width / 3.5, height / 1.3, "jugador", 0);
         this.jugador.setOrigin(0.5, 0.5);
@@ -120,10 +122,10 @@ export default class PuebloEscena extends Phaser.Scene {
         this.jugador.on(
             "animationcomplete",
             (anim: Phaser.Animations.Animation) => {
-                if (anim.key === "TC_izq") {
-                    this.jugador.play({ key: "Cam_izq", repeat: -1 });
-                } else if (anim.key === "TC_derch") {
-                    this.jugador.play({ key: "Cam_derch", repeat: -1 });
+                if (anim.key === "jugador_TC_izq") {
+                    this.jugador.play({ key: "jugador_Cam_izq", repeat: -1 });
+                } else if (anim.key === "jugador_TC_derch") {
+                    this.jugador.play({ key: "jugador_Cam_derch", repeat: -1 });
                 }
             }
         );
@@ -173,9 +175,9 @@ export default class PuebloEscena extends Phaser.Scene {
             this.jugador.x -= velocidad;
 
             // Ejecuta la animación
-            if (animacionActual !== "Cam_izq" && animacionActual !== "TC_izq") {
+            if (animacionActual !== "jugador_Cam_izq" && animacionActual !== "jugador_TC_izq") {
                 this.jugador.anims.timeScale = 1;
-                this.jugador.play({ key: "TC_izq" });
+                this.jugador.play({ key: "jugador_TC_izq" });
             }
 
             this.mirarDerecha = false;
@@ -184,23 +186,23 @@ export default class PuebloEscena extends Phaser.Scene {
 
             // Ejecuta la animación
             if (
-                animacionActual !== "Cam_derch" &&
-                animacionActual !== "TC_derch"
+                animacionActual !== "jugador_Cam_derch" &&
+                animacionActual !== "jugador_TC_derch"
             ) {
                 this.jugador.anims.timeScale = 1;
-                this.jugador.play({ key: "TC_derch" });
+                this.jugador.play({ key: "jugador_TC_derch" });
             }
 
             this.mirarDerecha = true;
         } else {
-            if (animacionActual !== "Idle_derch") {
+            if (animacionActual !== "jugador_Idle_derch") {
                 this.jugador.anims.timeScale = 0.3;
 
                 // Ejecuta la animación
                 if (this.mirarDerecha) {
-                    this.jugador.play({ key: "Idle_derch", repeat: -1 });
+                    this.jugador.play({ key: "jugador_Idle_derch", repeat: -1 });
                 } else {
-                    this.jugador.play({ key: "Idle_izq", repeat: -1 });
+                    this.jugador.play({ key: "jugador_Idle_izq", repeat: -1 });
                 }
             }
         }
@@ -244,6 +246,7 @@ export default class PuebloEscena extends Phaser.Scene {
             //TODO mejorar la lógica
             if (this.teclaE.isDown) {
                 if (objetoCercano.nombre == "teletransporte") {
+                    this.destroy();
                     this.scene.stop("PuebloEscena");
                     this.scene.start("EscenaBatalla");
                 }
@@ -253,9 +256,46 @@ export default class PuebloEscena extends Phaser.Scene {
         }
     }
 
+    // Genera animaciones individuales para cada elemento que las necesite y así evitar conflictos
+    async generarAnimacion(elemento: string) {
+        const animaciones = this.anims.createFromAseprite(elemento);
+        animaciones.forEach((animacion) => {
+            const nuevaKey = `${elemento}_${animacion.key}`;
+
+            this.anims.remove(animacion.key); // Opcional: limpia si ya existía
+
+            this.anims.create({
+                key: nuevaKey,
+                frames: animacion.frames.map((f) => ({
+                    key: f.textureKey,
+                    frame: f.frame.name,
+                    duration: f.duration
+                })),
+                frameRate: animacion.frameRate,
+                repeat: animacion.repeat,
+            });
+
+
+        })
+    }
+
     destroy() {
         this.events.removeAllListeners();
-        this.children.removeAll();
-        this.textures.destroy();
+        this.children.removeAll(true);
+
+        // console.log(this.anims.anims);
+
+
+
+        // console.log(this.textures.list);
+
+        // for (const textura in this.textures.list) {
+        //     console.log(textura);
+
+        //     this.textures.remove(`${textura}`);
+
+        // }
+
+        // this.textures.remove("jugador");
     }
 }
