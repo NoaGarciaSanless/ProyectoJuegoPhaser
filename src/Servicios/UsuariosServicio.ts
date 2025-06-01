@@ -15,147 +15,132 @@ import {
     setDoc,
     where,
 } from "firebase/firestore";
+import { ElementoListaPersonajesDTO } from "../DTOs/PersonajeDTO";
 
 // Registra un usuario comprobando que no exista otro con estas credenciales
-export function registrarUsuario(
+export async function registrarUsuario(
     nombre: string,
     correo: string,
     contrasenha: string
 ) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            // Realiza una consulta para saber si hay un usuario con estas credenciales
-            let tabla = collection(db, "usuarios");
-            let consulta = query(tabla, where("nombre", "==", nombre));
-            let resultado = await getDocs(consulta);
+    try {
+        // Realiza una consulta para saber si hay un usuario con estas credenciales
+        let tabla = collection(db, "usuarios");
+        let consulta = query(tabla, where("nombre", "==", nombre));
+        let resultado = await getDocs(consulta);
 
-            if (!resultado.empty) {
-                // Obtinen los datos del usuario exitente
-                const usuarioNombre = resultado.docs[0].data().nombre;
+        if (!resultado.empty) {
+            // Obtinen los datos del usuario exitente
+            const usuarioNombre = resultado.docs[0].data().nombre;
 
-                // Si el usuario introducido es igual al recuperado manda un mensaje de usuario ya registrado
-                if (usuarioNombre == nombre) {
-                    throw new Error("Nombre de usuario ya en uso");
-                }
+            // Si el usuario introducido es igual al recuperado manda un mensaje de usuario ya registrado
+            if (usuarioNombre == nombre) {
+                throw new Error("Nombre de usuario ya en uso");
             }
-
-            createUserWithEmailAndPassword(auth, correo, contrasenha)
-                .then(async (credenciales) => {
-                    // Crea un DTO para el nuevo usuario
-                    let nuevoUsuario = new UsuarioDTO(
-                        credenciales.user.uid,
-                        nombre,
-                        correo,
-                        "usuario"
-                    );
-
-                    // Guarda el usuario en FireStore
-                    const docRef = doc(db, "usuarios", nuevoUsuario.id);
-                    await setDoc(docRef, nuevoUsuario.aObjetoJS());
-
-                    await updateProfile(credenciales.user, {
-                        displayName: nombre,
-                    });
-
-                    // console.log(credenciales.user);
-
-                    resolve(credenciales.user.displayName);
-                })
-                .catch((error) => {
-                    console.log(error.code);
-                    let mensajeError = "";
-
-                    if (error.code === "auth/email-already-in-use") {
-                        mensajeError = "Este correo ya esta siendo utilizado";
-                    }
-
-                    if (error.code === "auth/invalid-email") {
-                        mensajeError = "Este correo no es válido";
-                    }
-
-                    if (error.code === "auth/weak-password") {
-                        mensajeError = "La contraseña es demasiado débil";
-                    }
-
-                    if (
-                        error.code ===
-                        "auth/password-does-not-meet-requirements"
-                    ) {
-                        mensajeError =
-                            "La contraseña debe contener mayúsculas, caracteres especiales y números";
-                    }
-
-                    throw new Error(mensajeError);
-                });
-        } catch (error: any) {
-            console.log(error);
-
-            reject(error);
         }
-    });
+
+        const credenciales = await createUserWithEmailAndPassword(
+            auth,
+            correo,
+            contrasenha
+        );
+
+        // Crea un DTO para el nuevo usuario
+        let nuevoUsuario = new UsuarioDTO(
+            credenciales.user.uid,
+            nombre,
+            correo,
+            "usuario"
+        );
+
+        // Guarda el usuario en FireStore
+        const docRef = doc(db, "usuarios", nuevoUsuario.id);
+        await setDoc(docRef, nuevoUsuario.aObjetoJS());
+
+        await updateProfile(credenciales.user, {
+            displayName: nombre,
+        });
+
+        await crearListaPersonajesPorDefecto(nuevoUsuario.id);
+
+        return credenciales.user.displayName;
+    } catch (error: any) {
+        console.log(error.code);
+        let mensajeError = "";
+
+        if (error.code === "auth/email-already-in-use") {
+            mensajeError = "Este correo ya esta siendo utilizado";
+        }
+
+        if (error.code === "auth/invalid-email") {
+            mensajeError = "Este correo no es válido";
+        }
+
+        if (error.code === "auth/weak-password") {
+            mensajeError = "La contraseña es demasiado débil";
+        }
+
+        if (error.code === "auth/password-does-not-meet-requirements") {
+            mensajeError =
+                "La contraseña debe contener mayúsculas, caracteres especiales y números";
+        }
+
+        throw "Error al iniciar sesión";
+    }
 }
 
 // Permite al usuario iniciar sesión con correo o nombre de usuario
-export function iniciarSesionConUsuario(login: string, contrasenha: string) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            // Realiza una consulta para saber si hay un usuario con este nombre o correo
-            let correo = login;
+export async function iniciarSesionConUsuario(
+    login: string,
+    contrasenha: string
+) {
+    try {
+        // Realiza una consulta para saber si hay un usuario con este nombre o correo
+        let correo = login;
 
-            // Si el login contiene @ consulta la propiedad 'correo' y si no la de usuario
-            if (!login.includes("@")) {
-                const tabla = collection(db, "usuarios");
-                const consulta = query(tabla, where("nombre", "==", login));
-                let resultado;
+        // Si el login contiene @ consulta la propiedad 'correo' y si no la de usuario
+        if (!login.includes("@")) {
+            const tabla = collection(db, "usuarios");
+            const consulta = query(tabla, where("nombre", "==", login));
+            let resultado;
 
-                try {
-                    resultado = await getDocs(consulta);
-                } catch (error: any) {
-                    console.error(
-                        "Error en la consulta de Firestore:",
-                        error.message
-                    );
-                    throw new Error(
-                        "Error al buscar el usuario: " + error.message
-                    );
-                }
+            resultado = await getDocs(consulta);
 
-                if (resultado.empty) {
-                    throw new Error(
-                        "Usuario con estas credenciales no encontrado"
-                    );
-                }
-
-                const usuario = resultado.docs[0];
-                correo = usuario.data().correo;
+            if (resultado.empty) {
+                throw "Usuario con estas credenciales no encontrado";
             }
 
-            signInWithEmailAndPassword(auth, correo, contrasenha)
-                .then((credenciales) => {
-                    // console.log(credenciales.user);
-                    // console.log("Usuario ha iniciado sesión");
-
-                    resolve(credenciales.user.displayName);
-                })
-                .catch((error) => {
-                    console.log(error.code);
-                    console.log(error.message);
-
-                    if (error === "auth/invalid-email") {
-                        throw new Error("Correo no encontrado");
-                    }
-                    if (error === "auth/invalid-credential") {
-                        throw new Error(
-                            "Datos incorrectos para iniciar sesión"
-                        );
-                    }
-                });
-        } catch (error: any) {
-            console.log(error);
-
-            reject(error);
+            const usuario = resultado.docs[0];
+            correo = usuario.data().correo;
         }
-    });
+
+        // Inicia sesión
+        const credenciales = await signInWithEmailAndPassword(
+            auth,
+            correo,
+            contrasenha
+        );
+
+        await crearListaPersonajesPorDefecto(credenciales.user.uid);
+
+        return credenciales.user.displayName;
+    } catch (error: any) {
+        // console.log(error?.code, error?.message);
+
+        if (error.code === "auth/invalid-email") {
+            throw "Correo no encontrado";
+        }
+
+        if (error.code === "auth/invalid-credential") {
+            throw "Datos incorrectos para iniciar sesión";
+        }
+
+        if (typeof error === "string") {
+            throw error;
+        }
+
+        throw "Error al iniciar sesión";
+    }
 }
 
 // Comprueba las sesiones, si hay usuario devuelve su nombre
@@ -165,10 +150,10 @@ export function comprobarUsuario() {
             auth,
             (usuario) => {
                 if (usuario) {
-                    console.log("Hay un usuario");
+                    // console.log("Hay un usuario");
                     resolve(usuario.displayName!);
                 } else {
-                    console.log("No hay usuario");
+                    // console.log("No hay usuario");
                     resolve("");
                 }
             },
@@ -183,4 +168,27 @@ export function comprobarUsuario() {
 // Log out del usuario
 export async function cerrarSesionUsuario() {
     await auth.signOut();
+}
+
+// ---------------------------------------------
+async function crearListaPersonajesPorDefecto(usuarioId: string) {
+    // Crea la lista de personajes
+    const listaRef = collection(db, "usuarios", usuarioId, "listaPersonajes");
+
+    const listaPersonajes = await getDocs(listaRef);
+
+    if (listaPersonajes.empty) {
+        // Crear referencia a un nuevo documento con ID automático
+        const nuevoPersonajeRef = doc(listaRef); // genera ID sin guardar aún
+
+        let personajeInicial = new ElementoListaPersonajesDTO(
+            nuevoPersonajeRef.id,
+            1,
+            0,
+            1,
+            true
+        );
+
+        await setDoc(nuevoPersonajeRef, personajeInicial.aObjetoJS());
+    }
 }

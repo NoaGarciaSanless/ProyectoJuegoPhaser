@@ -22,6 +22,9 @@ export class Assets {
     public static readonly casaHerrero =
         "https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1747862560/CasaHerrero_rvyvmq.png";
 
+    public static readonly casaPrincipal =
+        "https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1748517694/casaPrincipal_s5u3qb.png";
+
     public static readonly tp_json =
         "https://res.cloudinary.com/juegoporturnosdaw-img/raw/upload/v1747937060/altar_teletransporte_booeqh.json";
     public static readonly tp_sprite =

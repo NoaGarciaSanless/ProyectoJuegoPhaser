@@ -1,7 +1,14 @@
 import { EnemigoDTO } from "../DTOs/EnemigoDTO";
-import { PersonajeDTO } from "../DTOs/PersonajeDTO";
+import { ElementoListaPersonajesDTO, PersonajeDTO } from "../DTOs/PersonajeDTO";
 import { auth, db } from "./ConexionFirebase";
-import { collection, getDocs } from "firebase/firestore";
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    where,
+} from "firebase/firestore";
 
 // Recoge personajes, luego filtra por nombre y devulve los que coincidan
 export function recogerPersonajes(nombre?: string) {
@@ -14,26 +21,26 @@ export function recogerPersonajes(nombre?: string) {
                 let lista: PersonajeDTO[] = [];
 
                 resultado.forEach((registro) => {
-                    const valores = registro.data();
+                    const valor = registro.data();
 
                     lista.push(
                         new PersonajeDTO(
                             registro.id,
-                            valores.nombre,
-                            valores.descripcion,
-                            valores.ataqueBase,
-                            valores.ataquePorNivel,
-                            valores.defensaBase,
-                            valores.defensaPorNivel,
-                            valores.ataqueMagicoBase,
-                            valores.ataqueMagicoPorNivel,
-                            valores.precisionBase,
-                            valores.criticoBase,
-                            valores.debilidad,
-                            valores.fortaleza,
-                            valores.habilidades,
-                            valores.spriteURL,
-                            valores.jsonURL
+                            valor.nombre,
+                            valor.descripcion,
+                            valor.ataqueBase,
+                            valor.ataquePorNivel,
+                            valor.defensaBase,
+                            valor.defensaPorNivel,
+                            valor.ataqueMagicoBase,
+                            valor.ataqueMagicoPorNivel,
+                            valor.precisionBase,
+                            valor.criticoBase,
+                            valor.debilidad,
+                            valor.fortaleza,
+                            valor.habilidades,
+                            valor.spriteURL,
+                            valor.jsonURL
                         )
                     );
                 });
@@ -70,26 +77,26 @@ export function recogerEnemigos(nombre?: string) {
                 let lista: EnemigoDTO[] = [];
 
                 resultado.forEach((registro) => {
-                    const valores = registro.data();
+                    const valor = registro.data();
 
                     lista.push(
                         new EnemigoDTO(
                             registro.id,
-                            valores.nombre,
-                            valores.descripcion,
-                            valores.ataqueBase,
-                            valores.ataquePorNivel,
-                            valores.defensaBase,
-                            valores.defensaPorNivel,
-                            valores.ataqueMagicoBase,
-                            valores.ataqueMagicoPorNivel,
-                            valores.precisionBase,
-                            valores.criticoBase,
-                            valores.debilidad,
-                            valores.fortaleza,
-                            valores.habilidades,
-                            valores.spriteURL,
-                            valores.jsonURL
+                            valor.nombre,
+                            valor.descripcion,
+                            valor.ataqueBase,
+                            valor.ataquePorNivel,
+                            valor.defensaBase,
+                            valor.defensaPorNivel,
+                            valor.ataqueMagicoBase,
+                            valor.ataqueMagicoPorNivel,
+                            valor.precisionBase,
+                            valor.criticoBase,
+                            valor.debilidad,
+                            valor.fortaleza,
+                            valor.habilidades,
+                            valor.spriteURL,
+                            valor.jsonURL
                         )
                     );
                 });
@@ -133,7 +140,7 @@ export function filtrarLista(nombre: string, tipo: string) {
                 // Pasa el resultado a la lista
                 if (!resultado.empty) {
                     resultado.forEach((registro) => {
-                        // const valores = registro.data();
+                        // const valor = registro.data();
 
                         lista.push(registro.data());
                     });
@@ -149,8 +156,8 @@ export function filtrarLista(nombre: string, tipo: string) {
                     // Devuelve la lista
                     resolve([...lista]);
                 } else {
-                    console.log("No se encontraron datos.");
-                    throw Error("No se han encontrado datos.");
+                    console.log("No se encontraron valor.");
+                    throw Error("No se han encontrado valor.");
                 }
             } else {
                 let personajes = await recogerPersonajes(nombre);
@@ -167,5 +174,68 @@ export function filtrarLista(nombre: string, tipo: string) {
             reject(error);
         }
     });
+}
+
+// Obtiene un personaje por id
+export async function obtenerPersonaje(id: number) {
+    let personajeRef = doc(db, "personajes", `${id}`);
+    let resultado = await getDoc(personajeRef);
+
+    if (resultado.exists()) {
+        let valor = resultado.data();
+
+        let personaje = new PersonajeDTO(
+            resultado.id,
+            valor.nombre,
+            valor.descripcion,
+            valor.ataqueBase,
+            valor.ataquePorNivel,
+            valor.defensaBase,
+            valor.defensaPorNivel,
+            valor.ataqueMagicoBase,
+            valor.ataqueMagicoPorNivel,
+            valor.precisionBase,
+            valor.criticoBase,
+            valor.debilidad,
+            valor.fortaleza,
+            valor.habilidades,
+            valor.spriteURL,
+            valor.jsonURL
+        );
+
+        return personaje;
+    }
+}
+
+// Obtiene la lista de personajes del usuario actual
+export async function obtenerListaUsuarioActual(): Promise<
+    ElementoListaPersonajesDTO[]
+> {
+    // Obtiene el usuario
+    const usuario = auth.currentUser;
+    if (!usuario) {
+        throw new Error("No hay usuario");
+    }
+
+    const lista: ElementoListaPersonajesDTO[] = [];
+
+    // Petición a la lista en la BD
+    const listaRef = collection(db, "usuarios", usuario.uid, "listaPersonajes");
+    const resultado = await getDocs(listaRef);
+    resultado.forEach((personajeRegistro) => {
+        const valor = personajeRegistro.data();
+
+        lista.push(
+            new ElementoListaPersonajesDTO(
+                personajeRegistro.id,
+                valor.personajeID,
+                valor.experiencia,
+                valor.nivel,
+                valor.seleccionado
+            )
+        );
+    });
+
+    return lista;
 }
 

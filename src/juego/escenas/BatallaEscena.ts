@@ -69,6 +69,7 @@ export default class BatallaEscena extends Phaser.Scene {
     }
 
     preload() {
+        this.cameras.main.fadeIn(2500, 0, 0, 0);
 
         // Recarga el fondo
         if (this.textures.exists("fondo")) {
@@ -88,18 +89,11 @@ export default class BatallaEscena extends Phaser.Scene {
             "assets/decoraciones/assetsNaturaleza.json"
         );
 
-        // Recarga el sprite del jugador
-        if (this.textures.exists("jugador")) {
-            this.textures.remove("jugador");
-        }
         this.load.aseprite(
             "jugador",
             "assets/characters/per_anim_phaser.png",
             "assets/characters/per_anim_phaser.json"
         );
-
-        console.log(this.textures.exists("jugador"));
-
 
         this.load.aseprite(
             "esquleto",
@@ -114,56 +108,17 @@ export default class BatallaEscena extends Phaser.Scene {
         // Limpia las animaciones
         this.anims.anims.clear();
 
-
-        this.load.once('complete', () => {
-            console.log('✅ Carga completa.');
-            console.log('¿Jugador cargado?', this.textures.exists('jugador'));
-        });
-
         // Otras escenas
         this.batallaHUD = this.scene.get("BatallaHUD") as BatallaHUD;
 
         // Frames para los arboles
         const framesArboles = ["Arbol-0", "Arbol-1", "Arbol-2"];
-
-        // Funciones ------------------------------------------
-
-        // Crea un numero aleatorio de arboles
-        function crearArbolesAleatorio(this: BatallaEscena) {
-            let numeroArboles = Math.trunc(Math.max(Math.random() * 4));
-
-            let x: number[] = [];
-
-            for (let i = 0; i <= numeroArboles; i++) {
-                const frameArbol = Phaser.Math.RND.pick(framesArboles);
-                let xPos = Phaser.Math.Between(0, -4.32);
-
-                do {
-                    xPos = Phaser.Math.FloatBetween(-4.32, 0);
-                } while (x.some((usado) => Math.abs(usado - xPos) < 0.9));
-
-                x.push(xPos);
-
-                this.add
-                    .sprite(0, sueloY - 200, "arboles", frameArbol)
-                    .setOrigin(xPos, 0.5)
-                    .setScale(3, 3);
-            }
-        }
-
-        // Fondo -----------------------------------------
-        this.fondo = this.add.sprite(0, 0, "fondo");
-
-        this.fondo.setOrigin(0, 0);
-        this.fondo.setDisplaySize(width, height / 1.5);
-
-        const sueloY = this.fondo.displayHeight;
-
-        this.suelo = this.add.sprite(0, sueloY, "suelo");
-        this.suelo.setOrigin(0.1, 0.4);
-        this.suelo.setDisplaySize(width * 1.3, (height - sueloY) * 2);
-
-        crearArbolesAleatorio.call(this);
+        // Crea el escenario
+        this.crearEscenario(width, height);
+        // Crea los arboles aleatoriamente
+        this.crearArbolesAleatorio(framesArboles);
+        // Creación de los personajes
+        this.crearPersonajes(width, height);
 
         // Load the HUD in top of this scene
         this.scene.launch("BatallaHUD");
@@ -172,50 +127,6 @@ export default class BatallaEscena extends Phaser.Scene {
         this.time.delayedCall(50, () => {
             this.mostrarTextoTurnos(this.turno, "turns", "showTurn");
             this.turno++;
-        });
-
-        // Personajes -----------------------------------------
-
-        // Esqueletos
-        // this.anims.createFromAseprite("esquleto");
-        this.generarAnimacion("esquleto");
-
-        this.enemigo1 = this.add
-            .sprite(width / 1.5, height / 1.4, "esquleto", 16)
-            .setOrigin(0.5, 0.5)
-            .setScale(4, 4);
-
-        this.enemigo1.anims.timeScale = 0.3;
-        this.reproducirAnimacionIdle(this.enemigo1, "esquleto", "Idle_izq");
-
-        this.time.delayedCall(50, () => {
-            this.crearBarraVida(
-                this.enemigo1.x,
-                this.enemigo1.y,
-                this.vidaEnemigo,
-                "enemy1"
-            );
-        });
-
-        // Personaje
-        // this.anims.createFromAseprite("jugador");
-        this.generarAnimacion("jugador");
-
-
-        this.personaje = this.add
-            .sprite(width / 3.5, height / 1.4, "jugador", 0)
-            .setOrigin(0.5, 0.5)
-            .setScale(4, 4);
-
-        this.reproducirAnimacionIdle(this.personaje, "jugador", "Idle_combate");
-
-        this.time.delayedCall(50, () => {
-            this.crearBarraVida(
-                this.personaje.x,
-                this.personaje.y,
-                this.vidaJugador,
-                "player1"
-            );
         });
 
         // Eventos ---------------------------------------------
@@ -238,82 +149,87 @@ export default class BatallaEscena extends Phaser.Scene {
         });
     }
 
-    // Controla la lógica de los turnos
-    async siguienteTurno() {
-        if (this.estadoActual === EstadoBatalla.TurnoJugador) {
-            // Limpia los textos para el nuevo turno
-            this.batallaHUD?.events.emit("clean_text");
-            this.mostrarTextoTurnos(this.turno, "turns", "showTurn");
-            this.turno++;
+    // Creación de elementos----------------------------------------------
+    // Crea los elementos de los personajes
+    crearPersonajes(width: number, height: number) {
+        // Personajes -----------------------------------------
 
-            console.log("Player's Turn");
+        // Esqueleto
+        this.generarAnimacion("esquleto");
 
-            // Permite al jugador realizar acciones cuando comienza el turno
-            this.batallaHUD?.events.emit("allow-attack");
+        this.enemigo1 = this.add
+            .sprite(width / 1.5, height / 1.4, "esquleto", 16)
+            .setOrigin(0.5, 0.5)
+            .setScale(4, 4);
 
-            return;
-        } else if (this.estadoActual === EstadoBatalla.TurnoEnemigo) {
-            // Espera a que el enemigo ataque
-            console.log("Enemy's Turn");
-            await this.ataqueEnemigo();
+        this.enemigo1.anims.timeScale = 0.3;
+        this.reproducirAnimacionIdle(this.enemigo1, "esquleto", "Idle_izq");
 
-            // Moves to the next turn
-            this.estadoActual = EstadoBatalla.FinalizarTurno;
-            this.siguienteTurno();
-        } else if (this.estadoActual === EstadoBatalla.Animacion) {
-            setTimeout(() => {
-                console.log("Animations playing");
+        this.time.delayedCall(50, () => {
+            this.crearBarraVida(
+                this.enemigo1.x,
+                this.enemigo1.y,
+                this.vidaEnemigo,
+                "enemy1"
+            );
+        });
 
-                // Pasa al siguiente turno
-                this.estadoActual = EstadoBatalla.TurnoEnemigo;
-                this.siguienteTurno();
-            }, 2000);
-        } else if (this.estadoActual === EstadoBatalla.FinalizarTurno) {
-            if (this.vidaJugador <= 0) {
-                console.log("Game Over");
+        // Personaje
+        this.generarAnimacion("jugador");
 
-                this.batallaHUD?.events.emit("game_over");
-                this.reproducirAnimacion(this.personaje, "jugador", "Derrota");
+        this.personaje = this.add
+            .sprite(width / 3.5, height / 1.4, "jugador", 0)
+            .setOrigin(0.5, 0.5)
+            .setScale(4, 4);
 
-                this.estadoActual = EstadoBatalla.PantallaFin;
-                this.siguienteTurno();
-            } else if (this.vidaEnemigo <= 0) {
-                console.log("Victory");
+        this.reproducirAnimacionIdle(this.personaje, "jugador", "Idle_combate");
 
-                this.batallaHUD?.events.emit("victory");
+        this.time.delayedCall(50, () => {
+            this.crearBarraVida(
+                this.personaje.x,
+                this.personaje.y,
+                this.vidaJugador,
+                "player1"
+            );
+        });
+    }
 
-                this.estadoActual = EstadoBatalla.PantallaFin;
-                this.siguienteTurno();
-            } else {
-                setTimeout(() => {
-                    console.log(
-                        `Player:${this.vidaJugador}, Enemy: ${this.vidaEnemigo}`
-                    );
+    crearEscenario(width: number, height: number) {
+        // Fondo -----------------------------------------
+        this.fondo = this.add.sprite(0, 0, "fondo");
 
-                    if (this.ultimoEstado === EstadoBatalla.TurnoJugador) {
-                        this.estadoActual = EstadoBatalla.TurnoEnemigo;
-                    } else if (
-                        this.ultimoEstado === EstadoBatalla.TurnoEnemigo
-                    ) {
-                        this.estadoActual = EstadoBatalla.TurnoJugador;
+        this.fondo.setOrigin(0, 0);
+        this.fondo.setDisplaySize(width, height / 1.5);
 
-                        // setTimeout(
-                        //     () => this.battleHUD?.events.emit("clean_text"),
-                        //     500
-                        // );
-                    }
-                    this.ultimoEstado = this.estadoActual;
+        // Suelo
+        const sueloY = this.fondo.displayHeight;
+        this.suelo = this.add.sprite(0, sueloY, "suelo");
+        this.suelo.setOrigin(0.1, 0.4);
+        this.suelo.setDisplaySize(width * 1.3, (height - sueloY) * 2);
+    }
 
-                    // Pasa al siguiente turno
-                    this.siguienteTurno();
-                }, 1000);
-            }
+    // Crea un numero aleatorio de arboles
+    crearArbolesAleatorio(framesArboles: string[]) {
+        const sueloY = this.fondo.displayHeight;
 
-            // Actualiza las barras de vida
-            this.actualizarBarraVida(this.vidaJugador, "player1");
-            this.actualizarBarraVida(this.vidaEnemigo, "enemy1");
-        } else if (this.estadoActual === EstadoBatalla.PantallaFin) {
-            return;
+        let numeroArboles = Math.trunc(Math.max(Math.random() * 4));
+
+        let x: number[] = [];
+
+        for (let i = 0; i <= numeroArboles; i++) {
+            const frameArbol = Phaser.Math.RND.pick(framesArboles);
+            let xPos = Phaser.Math.Between(0, -4.32);
+
+            do {
+                xPos = Phaser.Math.FloatBetween(-4.32, 0);
+            } while (x.some((usado) => Math.abs(usado - xPos) < 0.9));
+
+            x.push(xPos);
+
+            this.add
+                .sprite(0, sueloY - 200, "arboles", frameArbol)
+                .setOrigin(xPos, 0.5)
+                .setScale(3, 3);
         }
     }
 
@@ -354,121 +270,10 @@ export default class BatallaEscena extends Phaser.Scene {
         this.batallaHUD?.events.emit("update_health_bar", cantidad, key);
     }
 
-    // Logica para el ataque del personaje
-    ataqueJugador(): Promise<void> {
-        return new Promise(async (resolve) => {
-            await this.reproducirAnimacion(this.personaje, "jugador", "Ataque");
-            this.reproducirAnimacionIdle(this.personaje, "jugador", "Idle_combate");
-
-            let fallo = this.calcularProbabilidad(this.probaFallarJugador);
-
-            if (fallo) {
-                this.mostrarTextoTurnos(0, "player", "miss", "enemy1");
-
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            } else {
-                this.enemigo1.setTint(0xff0000);
-                setTimeout(() => {
-                    this.enemigo1.clearTint();
-                }, 500);
-
-                // Calcula el daño del ataque
-                let critico = this.calcularProbabilidad(
-                    this.probaCriticoJugador
-                );
-                let ataqueTotal = this.ataqueBaseJugador * (critico ? 2 : 1);
-
-                // Baja la vida del enemigo
-                this.vidaEnemigo -= ataqueTotal;
-
-                if (ataqueTotal > 0) {
-                    this.actualizarBarraVida(this.vidaEnemigo, "enemy1");
-                }
-
-                if (critico) {
-                    this.mostrarMensaje("Critical hit!");
-                }
-
-                this.mostrarTextoTurnos(
-                    ataqueTotal,
-                    "player",
-                    "attack",
-                    "enemy1"
-                );
-
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            }
-        });
-    }
-
-    // Logica para el ataque del enemigo
-    ataqueEnemigo(): Promise<void> {
-        return new Promise(async (resolve) => {
-            await this.reproducirAnimacion(this.enemigo1, "esquleto", "Ataque_izq");
-            this.reproducirAnimacionIdle(this.enemigo1, "esquleto", "Idle_izq");
-
-            let fallo = this.calcularProbabilidad(this.probaFallarJugador);
-
-            if (fallo) {
-                this.mostrarTextoTurnos(0, "enemy", "miss", "player");
-
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            } else {
-                this.personaje.setTint(0xff0000);
-                await this.reproducirAnimacion(this.personaje, "jugador", "Dañado");
-                setTimeout(() => {
-                    this.personaje.clearTint();
-                }, 500);
-                this.reproducirAnimacionIdle(this.personaje, "jugador", "Idle_combate");
-
-                // Calcula el daño del ataque
-                let critico = this.calcularProbabilidad(1);
-                let ataqueTotal = this.ataqueBaseEnemigo * (critico ? 2 : 1);
-
-                // Baja la vida del enemigo
-                this.vidaJugador -= ataqueTotal;
-
-                if (ataqueTotal > 0) {
-                    this.actualizarBarraVida(this.vidaJugador, "player1");
-                }
-
-                if (critico) {
-                    this.mostrarMensaje("Critical hit!");
-                }
-
-                this.mostrarTextoTurnos(
-                    ataqueTotal,
-                    "enemy",
-                    "attack",
-                    "player"
-                );
-
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            }
-        });
-    }
-
-    // Calcula una probabilidad
-    calcularProbabilidad(probabilidad: number): Boolean {
-        let numero = Phaser.Math.Between(1, 10);
-
-        if (numero <= probabilidad) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+    // Animaciones y assets ----------------------------------------------
 
     // Genera animaciones individuales para cada elemento que las necesite y así evitar conflictos
-    async generarAnimacion(elemento: string) {
+    generarAnimacion(elemento: string) {
         const animaciones = this.anims.createFromAseprite(elemento);
         animaciones.forEach((animacion) => {
             const nuevaKey = `${elemento}_${animacion.key}`;
@@ -480,14 +285,12 @@ export default class BatallaEscena extends Phaser.Scene {
                 frames: animacion.frames.map((f) => ({
                     key: f.textureKey,
                     frame: f.frame.name,
-                    duration: f.duration
+                    duration: f.duration,
                 })),
                 frameRate: animacion.frameRate,
                 repeat: animacion.repeat,
             });
-
-
-        })
+        });
     }
 
     // Reproduce la animacion si el personaje la tiene
@@ -539,7 +342,218 @@ export default class BatallaEscena extends Phaser.Scene {
         });
     }
 
-    update() { }
+    // Lógica batalla-----------------------------------------------------
+
+    // Controla la lógica de los turnos
+    async siguienteTurno() {
+        if (this.estadoActual === EstadoBatalla.TurnoJugador) {
+            // Limpia los textos para el nuevo turno
+            this.batallaHUD?.events.emit("clean_text");
+            this.mostrarTextoTurnos(this.turno, "turns", "showTurn");
+            this.turno++;
+
+            // console.log("Player's Turn");
+
+            // Permite al jugador realizar acciones cuando comienza el turno
+            this.batallaHUD?.events.emit("allow-attack");
+
+            return;
+        } else if (this.estadoActual === EstadoBatalla.TurnoEnemigo) {
+            // Espera a que el enemigo ataque
+            // console.log("Enemy's Turn");
+            await this.ataqueEnemigo();
+
+            // Moves to the next turn
+            this.estadoActual = EstadoBatalla.FinalizarTurno;
+            this.siguienteTurno();
+        } else if (this.estadoActual === EstadoBatalla.Animacion) {
+            setTimeout(() => {
+                // console.log("Animations playing");
+
+                // Pasa al siguiente turno
+                this.estadoActual = EstadoBatalla.TurnoEnemigo;
+                this.siguienteTurno();
+            }, 2000);
+        } else if (this.estadoActual === EstadoBatalla.FinalizarTurno) {
+            if (this.vidaJugador <= 0) {
+                // console.log("Game Over");
+
+                this.batallaHUD?.events.emit("desactivar-botones");
+                this.batallaHUD?.events.emit("game_over");
+                this.reproducirAnimacion(this.personaje, "jugador", "Derrota");
+
+                this.estadoActual = EstadoBatalla.PantallaFin;
+                this.siguienteTurno();
+            } else if (this.vidaEnemigo <= 0) {
+                // console.log("Victory");
+
+                this.batallaHUD?.events.emit("desactivar-botones");
+                this.batallaHUD?.events.emit("victory");
+
+                this.estadoActual = EstadoBatalla.PantallaFin;
+                this.siguienteTurno();
+            } else {
+                setTimeout(() => {
+                    // console.log(
+                    //     `Player:${this.vidaJugador}, Enemy: ${this.vidaEnemigo}`
+                    // );
+
+                    if (this.ultimoEstado === EstadoBatalla.TurnoJugador) {
+                        this.estadoActual = EstadoBatalla.TurnoEnemigo;
+                    } else if (
+                        this.ultimoEstado === EstadoBatalla.TurnoEnemigo
+                    ) {
+                        this.estadoActual = EstadoBatalla.TurnoJugador;
+                    }
+                    this.ultimoEstado = this.estadoActual;
+
+                    // Pasa al siguiente turno
+                    this.siguienteTurno();
+                }, 1000);
+            }
+
+            // Actualiza las barras de vida
+            this.actualizarBarraVida(this.vidaJugador, "player1");
+            this.actualizarBarraVida(this.vidaEnemigo, "enemy1");
+        } else if (this.estadoActual === EstadoBatalla.PantallaFin) {
+            return;
+        }
+    }
+
+    // Logica para el ataque del personaje
+    ataqueJugador(): Promise<void> {
+        return new Promise(async (resolve) => {
+            await this.reproducirAnimacion(
+                this.personaje,
+                "jugador",
+                "Ataque_basico"
+            );
+            this.reproducirAnimacionIdle(
+                this.personaje,
+                "jugador",
+                "Idle_combate"
+            );
+
+            let fallo = this.calcularProbabilidad(this.probaFallarJugador);
+
+            if (fallo) {
+                this.mostrarTextoTurnos(0, "player", "miss", "enemy1");
+
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            } else {
+                this.enemigo1.setTint(0xff0000);
+                setTimeout(() => {
+                    this.enemigo1.clearTint();
+                }, 500);
+
+                // Calcula el daño del ataque
+                let critico = this.calcularProbabilidad(
+                    this.probaCriticoJugador
+                );
+                let ataqueTotal = this.ataqueBaseJugador * (critico ? 2 : 1);
+
+                // Baja la vida del enemigo
+                this.vidaEnemigo -= ataqueTotal;
+
+                if (ataqueTotal > 0) {
+                    this.actualizarBarraVida(this.vidaEnemigo, "enemy1");
+                }
+
+                if (critico) {
+                    this.mostrarMensaje("Critical hit!");
+                }
+
+                this.mostrarTextoTurnos(
+                    ataqueTotal,
+                    "player",
+                    "attack",
+                    "enemy1"
+                );
+
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            }
+        });
+    }
+
+    // Logica para el ataque del enemigo
+    ataqueEnemigo(): Promise<void> {
+        return new Promise(async (resolve) => {
+            await this.reproducirAnimacion(
+                this.enemigo1,
+                "esquleto",
+                "Ataque_izq"
+            );
+            this.reproducirAnimacionIdle(this.enemigo1, "esquleto", "Idle_izq");
+
+            let fallo = this.calcularProbabilidad(this.probaFallarJugador);
+
+            if (fallo) {
+                this.mostrarTextoTurnos(0, "enemy", "miss", "player");
+
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            } else {
+                this.personaje.setTint(0xff0000);
+                await this.reproducirAnimacion(
+                    this.personaje,
+                    "jugador",
+                    "Dañado_derch"
+                );
+                setTimeout(() => {
+                    this.personaje.clearTint();
+                }, 500);
+                this.reproducirAnimacionIdle(
+                    this.personaje,
+                    "jugador",
+                    "Idle_combate"
+                );
+
+                // Calcula el daño del ataque
+                let critico = this.calcularProbabilidad(1);
+                let ataqueTotal = this.ataqueBaseEnemigo * (critico ? 2 : 1);
+
+                // Baja la vida del enemigo
+                this.vidaJugador -= ataqueTotal;
+
+                if (ataqueTotal > 0) {
+                    this.actualizarBarraVida(this.vidaJugador, "player1");
+                }
+
+                if (critico) {
+                    this.mostrarMensaje("Critical hit!");
+                }
+
+                this.mostrarTextoTurnos(
+                    ataqueTotal,
+                    "enemy",
+                    "attack",
+                    "player"
+                );
+
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            }
+        });
+    }
+
+    // Calcula una probabilidad
+    calcularProbabilidad(probabilidad: number): Boolean {
+        let numero = Phaser.Math.Between(1, 10);
+
+        if (numero <= probabilidad) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    update() {}
 
     destroy() {
         this.events.removeAllListeners();

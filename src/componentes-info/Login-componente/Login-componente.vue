@@ -94,10 +94,6 @@ function iniciarSesion() {
         return;
     }
 
-    // if (contrasenhaLogin.value.length < 6) {
-    //     mensajesError.value.login = "La contraseña debe tener al menos 6 caracteres";
-    //     return;
-    // }
 
     iniciarSesionConUsuario(nombreLogin.value, contrasenhaLogin.value)
         .then((resultado) => {
@@ -107,6 +103,8 @@ function iniciarSesion() {
         .catch((error) => {
             if (typeof error === "string") {
                 mensajesError.value.login = error;
+                console.log(error);
+
             }
         });
 }

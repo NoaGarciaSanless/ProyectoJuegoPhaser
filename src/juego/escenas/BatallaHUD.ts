@@ -177,6 +177,10 @@ export default class BatallaHUD extends Phaser.Scene {
             this.invBTN.setFrame(4);
         });
 
+        this.events.on("desactivar-botones", () => {
+            this.desactivarBotones();
+        });
+
         // --------------------------------------------------------
 
         this.events.on("allow-attack", () => {
@@ -637,6 +641,12 @@ export default class BatallaHUD extends Phaser.Scene {
                 indicador.setVisible(true);
             }
         }
+    }
+
+    desactivarBotones() {
+        this.atkBTN.disableInteractive();
+        this.defBTN.disableInteractive();
+        this.invBTN.disableInteractive();
     }
 
     update() {}

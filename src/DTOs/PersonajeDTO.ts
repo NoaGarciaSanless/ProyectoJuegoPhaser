@@ -94,3 +94,37 @@ export class PersonajeDTO {
         };
     }
 }
+
+// Clase de la lista de Personajes que tienen los usuarios
+export class ElementoListaPersonajesDTO {
+    public id: string;
+    public personajeID: number;
+    public experiencia: number;
+    public nivel: number;
+
+    public seleccionado: boolean;
+
+    public constructor(
+        id?: string,
+        personajeID?: number,
+        experiencia?: number,
+        nivel?: number,
+        seleccionado?: boolean
+    ) {
+        this.id = id || "";
+        this.personajeID = personajeID || 0;
+        this.experiencia = experiencia || 0;
+        this.nivel = nivel || 0;
+        this.seleccionado = seleccionado || false;
+    }
+
+    aObjetoJS() {
+        return {
+            id: this.id,
+            personajeID: this.personajeID,
+            experiencia: this.experiencia,
+            nivel: this.nivel,
+            seleccionado: this.seleccionado,
+        };
+    }
+}

@@ -19,7 +19,7 @@ export default class InicioEscena extends Phaser.Scene {
         );
     }
 
-    create() {
+    async create() {
         const { width, height } = this.scale;
 
         this.fondo = this.add.sprite(0, 0, "fondo");
@@ -38,11 +38,40 @@ export default class InicioEscena extends Phaser.Scene {
             this.comenzarBTN.setFrame(1);
         });
 
+        // let listaPersonajes: never[] = [];
+        // let personajeSeleccionado: PersonajeDTO;
+
+        // try {
+        //     let listaPersonajes = await obtenerListaUsuarioActual();
+
+        //     let idSel = listaPersonajes.find(
+        //         (personaje: ElementoListaPersonajesDTO) => {
+        //             return personaje.seleccionado;
+        //         }
+        //     );
+
+        //     personajeSeleccionado =
+        //         (await obtenerPersonaje(idSel!.personajeID ?? 0)) ??
+        //         new PersonajeDTO();
+        // } catch (error) {
+        //     console.error("Error al obtener la lista de personajes:", error);
+        // }
+
+        // this.comenzarBTN.on("pointerup", () => {
+        //     this.comenzarBTN.setFrame(0);
+        //     this.cameras.main.fadeOut(1000, 0, 0, 0);
+
+        //     this.scene.start("PuebloEscena", {
+        //         listaPersonajes: listaPersonajes,
+        //         personajeSeleccionado: personajeSeleccionado,
+        //     });
+        // });
+
         this.comenzarBTN.on("pointerup", () => {
             this.comenzarBTN.setFrame(0);
+            this.cameras.main.fadeOut(1000, 0, 0, 0);
 
-            // this.scene.start("EscenaBatalla");
-            this.scene.start("PuebloEscena");
+            this.scene.start("CargaEscena");
         });
     }
 }
