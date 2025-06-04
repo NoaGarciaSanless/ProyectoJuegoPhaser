@@ -6,9 +6,13 @@ import {
     ElementoListaPersonajesDTO,
     PersonajeDTO,
 } from "../../DTOs/PersonajeDTO";
+import PuebloHUD from "./PuebloHUD";
 
 export default class PuebloEscena extends Phaser.Scene {
     rexUI: RexUIPlugin;
+
+    // HUD
+    puebloHUD: PuebloHUD | any;
 
     fondo: GameObjects.Image;
 
@@ -63,6 +67,8 @@ export default class PuebloEscena extends Phaser.Scene {
         this.cameras.main.fadeIn(1000, 0, 0, 0);
 
         this.load.image("fondo", Assets.fondoBosque_sprite);
+        this.load.image("fondoInventarios", Assets.fondoInventario_sprite);
+        this.load.image("botonVolver", Assets.flechaVolver_sprite);
 
         this.load.aseprite(
             "jugador",
@@ -74,6 +80,11 @@ export default class PuebloEscena extends Phaser.Scene {
         this.load.image("casaHerrero", Assets.casaHerrero);
         this.load.image("casaPrincipal", Assets.casaPrincipal);
         this.load.aseprite("tp", Assets.tp_sprite, Assets.tp_json);
+
+        // Agrega un manejador para errores de carga
+        this.load.on("loaderror", (file: Phaser.Loader.File) => {
+            console.error(`Error al cargar el archivo: ${file.key}`);
+        });
     }
 
     async create() {
@@ -97,26 +108,29 @@ export default class PuebloEscena extends Phaser.Scene {
             true
         );
 
+        // Inicia el HUD del pueblo
+        this.puebloHUD = this.scene.get("PuebloHUD") as PuebloHUD;
+        this.scene.launch("PuebloHUD", {
+            listaPersonajes: this.listaPersonajes,
+            personajeSeleccionado: this.personajeSeleccionado,
+            todosPersonajesUsuario: this.todosPersonajesUsuario,
+        });
+
         const { width, height } = this.scale;
 
-        this.menuSeleccionPersonajes = this.generarPanelSeleccionPersonaje();
-        this.add.existing(this.menuSeleccionPersonajes);
-        this.menuSeleccionPersonajes.setPosition(
-            this.scale.width / 2,
-            this.scale.height / 2
-        );
-        this.menuSeleccionPersonajes.setVisible(true);
+        // this.menuSeleccionPersonajes = this.generarPanelSeleccionPersonaje();
+        // // this.add.existing(this.menuSeleccionPersonajes);
+        // this.menuSeleccionPersonajes.setPosition(
+        //     this.scale.width / 2,
+        //     this.scale.height / 2
+        // );
+        // this.menuSeleccionPersonajes.setVisible(true);
 
         // Fondo
         this.fondo = this.add.sprite(0, 0, "fondo");
         this.fondo.setOrigin(0, 0);
         this.fondo.setDisplaySize(width, height);
         this.fondo.setScrollFactor(0);
-
-        // this.fondo = this.add
-        //     .tileSprite(0, 0, width, height, "fondo")
-        //     .setOrigin(0, 0);
-        // this.fondo.setScrollFactor(0); // No se mueve con la cámara
 
         // Mapa
         this.suelo = this.add.sprite(0, height / 2.7, "suelo");
@@ -352,95 +366,6 @@ export default class PuebloEscena extends Phaser.Scene {
         }
     }
 
-    generarPanelSeleccionPersonaje() {
-        return this.rexUI.add.scrollablePanel({
-            width: 500,
-            height: 400,
-            scrollMode: 0, // vertical
-
-            panel: {
-                child: this.createCharacterList(),
-                mask: { padding: 1 },
-            },
-
-            slider: {
-                track: this.rexUI.add.roundRectangle(
-                    0,
-                    0,
-                    20,
-                    10,
-                    10,
-                    0x555555
-                ),
-                thumb: this.rexUI.add.roundRectangle(0, 0, 0, 0, 13, 0xaaaaaa),
-            },
-
-            space: {
-                left: 10,
-                right: 10,
-                top: 10,
-                bottom: 10,
-                panel: 10,
-            },
-        });
-    }
-
-    createCharacterList() {
-        const sizer = this.rexUI.add.fixWidthSizer({
-            space: {
-                item: 10,
-                line: 10,
-            },
-            align: "left",
-        });
-
-        const dummy = this.add.text(0, 0, "Panel visible", {
-            fontSize: "20px",
-            color: "#fff",
-        });
-
-        sizer.add(dummy);
-
-        return sizer;
-    }
-
-    createPersonajeItem(personaje: PersonajeDTO) {
-        return this.rexUI.add
-            .label({
-                width: 450,
-                height: 60,
-                background: this.rexUI.add.roundRectangle(
-                    0,
-                    0,
-                    0,
-                    0,
-                    10,
-                    0x333333
-                ),
-
-                icon: this.add
-                    .image(0, 0, personaje.spriteURL)
-                    .setDisplaySize(48, 48),
-
-                text: this.add.text(0, 0, `${personaje.nombre} (Lvl 1)`, {
-                    fontSize: "18px",
-                    color: "#ffffff",
-                }),
-
-                space: {
-                    icon: 10,
-                    left: 15,
-                    right: 15,
-                    top: 10,
-                    bottom: 10,
-                },
-
-                align: "center",
-            })
-            .setInteractive()
-            .on("pointerup", () => {});
-    }
-
     // Genera animaciones individuales para cada elemento que las necesite y así evitar conflictos
     async generarAnimacion(elemento: string) {
         const animaciones = this.anims.createFromAseprite(elemento);
@@ -502,6 +427,7 @@ export default class PuebloEscena extends Phaser.Scene {
 
         // Cuando completa la animación cambia de pantalla
         this.teletransporte.on("animationcomplete", () => {
+            this.scene.stop("PuebloHUD");
             this.scene.stop("PuebloEscena");
             this.destroy();
             this.scene.start("EscenaBatalla");

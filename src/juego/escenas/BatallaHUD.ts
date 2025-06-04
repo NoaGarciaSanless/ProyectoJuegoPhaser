@@ -468,6 +468,14 @@ export default class BatallaHUD extends Phaser.Scene {
             this.invBTN.setFrame(4);
         });
 
+        backBTN.on("pointerover", () => {
+            backBTN.setTint(0xcccccc);
+        });
+
+        backBTN.on("pointerout", () => {
+            backBTN.clearTint();
+        });
+
         let cabeceraInventario = this.add.container(0, 0);
         cabeceraInventario.add([backBTN]);
         cabeceraInventario.setDepth(10);

@@ -86,7 +86,7 @@ function recortarDescripcion() {
 onMounted(async () => {
 
     if (fondoRef.value) {
-        fondoRef.value.style.backgroundImage = `url('${Assets.fondoImagenAnim_sprite}')`;
+        fondoRef.value.style.backgroundImage = `url('${Assets.fondoSlot_sprite}')`;
     }
 
     if (tarjetaRef.value) {

@@ -7,6 +7,7 @@ import {
     getDoc,
     getDocs,
     query,
+    updateDoc,
     where,
 } from "firebase/firestore";
 
@@ -239,3 +240,50 @@ export async function obtenerListaUsuarioActual(): Promise<
     return lista;
 }
 
+export async function seleccionarPersonaje(viejoID: number, nuevoID: number) {
+    // Obtiene el usuario
+    const usuario = auth.currentUser;
+    if (!usuario) {
+        throw new Error("No hay usuario");
+    }
+
+    // Tabla con la lista de personajes
+    const listaRef = collection(db, "usuarios", usuario.uid, "listaPersonajes");
+
+    // Petición a la lista en la BD para desseleccionar el actual
+    const consulta = query(listaRef, where("seleccionado", "==", true));
+    const resultado1 = await getDocs(consulta);
+
+    if (!resultado1.empty) {
+        for (const documento of resultado1.docs) {
+            if (documento.data().personajeID === viejoID) {
+                const docRef = doc(
+                    db,
+                    "usuarios",
+                    usuario.uid,
+                    "listaPersonajes",
+                    documento.id
+                );
+
+                await updateDoc(docRef, { seleccionado: false });
+            }
+        }
+    }
+
+    // Marcar el nuevo personaje seleccionado
+    const consultaNuevo = query(listaRef, where("personajeID", "==", nuevoID));
+    const resultadoNuevo = await getDocs(consultaNuevo);
+
+    if (resultadoNuevo.empty) {
+        throw new Error("No se encontró el nuevo personaje");
+    }
+
+    const nuevoDocRef = doc(
+        db,
+        "usuarios",
+        usuario.uid,
+        "listaPersonajes",
+        resultadoNuevo.docs[0].id
+    );
+    await updateDoc(nuevoDocRef, { seleccionado: true });
+}

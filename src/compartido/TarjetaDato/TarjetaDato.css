@@ -84,6 +84,7 @@
 .verBTN {
     cursor: pointer;
 
+    font-family: "Pixelify Sans", sans-serif;
     font-size: 0.9em;
 
     background-color: #e2c16b;
