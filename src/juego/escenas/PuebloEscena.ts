@@ -22,10 +22,12 @@ export default class PuebloEscena extends Phaser.Scene {
     // Jugador
     jugador!: GameObjects.Sprite;
 
-    ultimaPosicionJugador: number;
+    ultimaPosicionJugador: number = 25;
     listaPersonajes: ElementoListaPersonajesDTO[] = [];
     personajeSeleccionado: PersonajeDTO = new PersonajeDTO();
     todosPersonajesUsuario: PersonajeDTO[] = [];
+
+    nombreTexturaJugador: string;
 
     // Objetos interactuables
     teletransporte!: GameObjects.Sprite;
@@ -42,8 +44,9 @@ export default class PuebloEscena extends Phaser.Scene {
 
     // Variables -----------------
     mirarDerecha: boolean = true;
-
     puedeMoverse: boolean = true;
+
+    animacionesCargadas: boolean = false;
 
     // Distancias con objetos interactuables
     objetosInteractuables: IObjetoInteractuable[] = [];
@@ -61,6 +64,9 @@ export default class PuebloEscena extends Phaser.Scene {
         this.listaPersonajes = data.listaPersonajes;
         this.personajeSeleccionado = data.personajeSeleccionado;
         this.todosPersonajesUsuario = data.todosPersonajesUsuario;
+
+        this.nombreTexturaJugador = `jugador_personaje_${this.personajeSeleccionado.id}`;
+        this.animacionesCargadas = false;
     }
 
     preload() {
@@ -71,7 +77,7 @@ export default class PuebloEscena extends Phaser.Scene {
         this.load.image("botonVolver", Assets.flechaVolver_sprite);
 
         this.load.aseprite(
-            "jugador",
+            this.nombreTexturaJugador,
             this.personajeSeleccionado.spriteURL,
             this.personajeSeleccionado.jsonURL
         );
@@ -88,6 +94,15 @@ export default class PuebloEscena extends Phaser.Scene {
     }
 
     async create() {
+        // Wait for the loader to complete before creating animations
+        await new Promise((resolve) => {
+            if (this.load.isReady()) {
+                resolve(null);
+            } else {
+                this.load.once("complete", resolve);
+            }
+        });
+
         // Evita que Phaser capture teclas si estás escribiendo
         window.addEventListener(
             "keydown",
@@ -117,14 +132,6 @@ export default class PuebloEscena extends Phaser.Scene {
         });
 
         const { width, height } = this.scale;
-
-        // this.menuSeleccionPersonajes = this.generarPanelSeleccionPersonaje();
-        // // this.add.existing(this.menuSeleccionPersonajes);
-        // this.menuSeleccionPersonajes.setPosition(
-        //     this.scale.width / 2,
-        //     this.scale.height / 2
-        // );
-        // this.menuSeleccionPersonajes.setVisible(true);
 
         // Fondo
         this.fondo = this.add.sprite(0, 0, "fondo");
@@ -166,21 +173,39 @@ export default class PuebloEscena extends Phaser.Scene {
         this.teletransporte.play({ key: "tp_Animacion_defecto", repeat: -1 });
 
         // Jugador
-        // this.anims.createFromAseprite("jugador");
-        await this.generarAnimacion("jugador");
+        if (this.jugador) {
+            this.jugador.destroy(); // Destroy existing player sprite if switching characters
+        }
 
-        this.jugador = this.add.sprite(width / 3.5, height / 1.3, "jugador", 0);
+        await this.generarAnimacion(this.nombreTexturaJugador);
+
+        this.jugador = this.add.sprite(
+            width / 3.5,
+            height / 1.3,
+            this.nombreTexturaJugador,
+            0
+        );
         this.jugador.setOrigin(0.5, 0.5);
         this.jugador.setScale(4, 4);
+
+        this.animacionesCargadas = true;
 
         // Animaciones del jugador, animaciones intercaladas para mayor fluidéz
         this.jugador.on(
             "animationcomplete",
             (anim: Phaser.Animations.Animation) => {
-                if (anim.key === "jugador_TC_izq") {
-                    this.jugador.play({ key: "jugador_Cam_izq", repeat: -1 });
-                } else if (anim.key === "jugador_TC_derch") {
-                    this.jugador.play({ key: "jugador_Cam_derch", repeat: -1 });
+                if (anim.key === `${this.nombreTexturaJugador}_TC_izq`) {
+                    this.jugador.play({
+                        key: `${this.nombreTexturaJugador}_Cam_izq`,
+                        repeat: -1,
+                    });
+                } else if (
+                    anim.key === `${this.nombreTexturaJugador}_TC_derch`
+                ) {
+                    this.jugador.play({
+                        key: `${this.nombreTexturaJugador}_Cam_derch`,
+                        repeat: -1,
+                    });
                 }
             }
         );
@@ -255,7 +280,7 @@ export default class PuebloEscena extends Phaser.Scene {
 
     update(): void {
         // Si no se ha iniciado el jugador no hace el update
-        if (!this.jugador) return;
+        if (!this.jugador || !this.animacionesCargadas) return;
 
         // Ajusta la velocidad del jugador
         const velocidad = 6;
@@ -270,11 +295,14 @@ export default class PuebloEscena extends Phaser.Scene {
 
                 // Ejecuta la animación
                 if (
-                    animacionActual !== "jugador_Cam_izq" &&
-                    animacionActual !== "jugador_TC_izq"
+                    animacionActual !==
+                        `${this.nombreTexturaJugador}_Cam_izq` &&
+                    animacionActual !== `${this.nombreTexturaJugador}_TC_izq`
                 ) {
                     this.jugador.anims.timeScale = 0.9;
-                    this.jugador.play({ key: "jugador_TC_izq" });
+                    this.jugador.play({
+                        key: `${this.nombreTexturaJugador}_TC_izq`,
+                    });
                 }
 
                 this.mirarDerecha = false;
@@ -283,30 +311,34 @@ export default class PuebloEscena extends Phaser.Scene {
 
                 // Ejecuta la animación
                 if (
-                    animacionActual !== "jugador_Cam_derch" &&
-                    animacionActual !== "jugador_TC_derch"
+                    animacionActual !==
+                        `${this.nombreTexturaJugador}_Cam_derch` &&
+                    animacionActual !== `${this.nombreTexturaJugador}_TC_derch`
                 ) {
                     this.jugador.anims.timeScale = 0.9;
-                    this.jugador.play({ key: "jugador_TC_derch" });
+                    this.jugador.play({
+                        key: `${this.nombreTexturaJugador}_TC_derch`,
+                    });
                 }
 
                 this.mirarDerecha = true;
             } else {
                 if (
-                    animacionActual !== "jugador_Idle_derch" &&
-                    animacionActual !== "jugador_Idle_izq"
+                    animacionActual !==
+                        `${this.nombreTexturaJugador}_Idle_derch` &&
+                    animacionActual !== `${this.nombreTexturaJugador}_Idle_izq`
                 ) {
                     this.jugador.anims.timeScale = 0.3;
 
                     // Ejecuta la animación
                     if (this.mirarDerecha) {
                         this.jugador.play({
-                            key: "jugador_Idle_derch",
+                            key: `${this.nombreTexturaJugador}_Idle_derch`,
                             repeat: -1,
                         });
                     } else {
                         this.jugador.play({
-                            key: "jugador_Idle_izq",
+                            key: `${this.nombreTexturaJugador}_Idle_izq`,
                             repeat: -1,
                         });
                     }
@@ -368,6 +400,17 @@ export default class PuebloEscena extends Phaser.Scene {
 
     // Genera animaciones individuales para cada elemento que las necesite y así evitar conflictos
     async generarAnimacion(elemento: string) {
+        // Check if animations for this element already exist
+        if (
+            this.anims.exists(`${elemento}_Animacion_defecto`) ||
+            this.anims.exists(`${elemento}_TC_izq`)
+        ) {
+            console.log(
+                `Animations for ${elemento} already exist, skipping creation.`
+            );
+            return;
+        }
+
         const animaciones = this.anims.createFromAseprite(elemento);
         animaciones.forEach((animacion) => {
             const nuevaKey = `${elemento}_${animacion.key}`;
@@ -413,12 +456,12 @@ export default class PuebloEscena extends Phaser.Scene {
         // Ejecuta la animación
         if (this.mirarDerecha) {
             this.jugador.play({
-                key: "jugador_Idle_derch",
+                key: `${this.nombreTexturaJugador}_Idle_derch`,
                 repeat: -1,
             });
         } else {
             this.jugador.play({
-                key: "jugador_Idle_izq",
+                key: `${this.nombreTexturaJugador}_Idle_izq`,
                 repeat: -1,
             });
         }
@@ -430,12 +473,16 @@ export default class PuebloEscena extends Phaser.Scene {
             this.scene.stop("PuebloHUD");
             this.scene.stop("PuebloEscena");
             this.destroy();
-            this.scene.start("EscenaBatalla");
+            this.scene.start("EscenaBatalla", {
+                personajeSeleccionado: this.personajeSeleccionado,
+            });
         });
     }
 
     destroy() {
         this.events.removeAllListeners();
         this.children.removeAll(true);
+        this.anims.remove(this.nombreTexturaJugador);
+        this.animacionesCargadas = false;
     }
 }

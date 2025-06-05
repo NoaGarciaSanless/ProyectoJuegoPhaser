@@ -61,7 +61,7 @@ export default class PuebloHUD extends Phaser.Scene {
 
     crearHeaderMenu(anchura: number, altura: number) {
         let texto = this.add
-            .text(-anchura*0.45, 40, `Selección de personaje`, {
+            .text(-anchura * 0.45, 40, `Selección de personaje`, {
                 fontFamily: "MiFuente",
                 fontSize: "30px",
                 color: "#000000",
@@ -268,6 +268,11 @@ export default class PuebloHUD extends Phaser.Scene {
                                     ),
                                     Number.parseInt(personaje.id)
                                 );
+
+                                // Recarga la escena
+                                this.scene.stop("PuebloHUD");
+                                this.scene.stop("PuebloEscena");
+                                this.scene.start("CargaEscena");
                             } catch (error) {
                                 console.log("Ha ocurrido un error: " + error);
                             }
@@ -281,7 +286,7 @@ export default class PuebloHUD extends Phaser.Scene {
                     }
 
                     return cellContainer;
-                },
+                }.bind(this),
             })
             .layout();
 

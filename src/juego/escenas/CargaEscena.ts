@@ -52,12 +52,16 @@ export default class CargaEscena extends Phaser.Scene {
                 throw new Error("No se pudo cargar el personaje seleccionado");
             }
 
-            //Ir a la escena de inicio (o la que desees) con los datos cargados
-            this.scene.start("PuebloEscena", {
-                listaPersonajes: listaPersonajes,
-                personajeSeleccionado: personajeSeleccionado,
-                todosPersonajesUsuario: personajesFiltrados,
+            this.load.once("complete", () => {
+                //Ir a la escena de inicio (o la que desees) con los datos cargados
+                this.scene.start("PuebloEscena", {
+                    listaPersonajes: listaPersonajes,
+                    personajeSeleccionado: personajeSeleccionado,
+                    todosPersonajesUsuario: personajesFiltrados,
+                });
             });
+
+            this.load.start();
         } catch (error) {
             console.error("Error durante la carga:", error);
             this.scene.start("InicioEscena");

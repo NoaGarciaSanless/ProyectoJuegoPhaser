@@ -4,6 +4,7 @@ import Phaser from "phaser";
 import BatallaHUD from "./BatallaHUD";
 
 import { IObjeto } from "../../DTOs/ObjetoDTO";
+import { PersonajeDTO } from "../../DTOs/PersonajeDTO";
 
 // Turnos de la batalla
 enum EstadoBatalla {
@@ -29,6 +30,8 @@ export default class BatallaEscena extends Phaser.Scene {
     ultimoEstado: EstadoBatalla = this.estadoActual;
 
     turno: number = 1;
+
+    personajeSeleccionado: PersonajeDTO;
 
     vidaJugador: number = 100;
     vidaEnemigo: number = 100;
@@ -68,6 +71,10 @@ export default class BatallaEscena extends Phaser.Scene {
         super("EscenaBatalla");
     }
 
+    init(data: { personajeSeleccionado: PersonajeDTO }) {
+        this.personajeSeleccionado = data.personajeSeleccionado;
+    }
+
     preload() {
         this.cameras.main.fadeIn(2500, 0, 0, 0);
 
@@ -90,9 +97,9 @@ export default class BatallaEscena extends Phaser.Scene {
         );
 
         this.load.aseprite(
-            "jugador",
-            "assets/characters/per_anim_phaser.png",
-            "assets/characters/per_anim_phaser.json"
+            `jugador_personaje_${this.personajeSeleccionado.id}`,
+            this.personajeSeleccionado.spriteURL,
+            this.personajeSeleccionado.jsonURL
         );
 
         this.load.aseprite(
