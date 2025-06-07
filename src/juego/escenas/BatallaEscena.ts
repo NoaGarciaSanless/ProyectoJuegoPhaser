@@ -4,7 +4,12 @@ import Phaser from "phaser";
 import BatallaHUD from "./BatallaHUD";
 
 import { IObjeto } from "../../DTOs/ObjetoDTO";
-import { PersonajeDTO } from "../../DTOs/PersonajeDTO";
+import {
+    ElementoListaPersonajesDTO,
+    PersonajeDTO,
+} from "../../DTOs/PersonajeDTO";
+import { EnemigoDTO } from "../../DTOs/EnemigoDTO";
+import { Assets } from "../../compartido/Assets";
 
 // Turnos de la batalla
 enum EstadoBatalla {
@@ -28,32 +33,31 @@ export default class BatallaEscena extends Phaser.Scene {
     // Variables para la lógica de turnos
     estadoActual: EstadoBatalla = EstadoBatalla.TurnoJugador;
     ultimoEstado: EstadoBatalla = this.estadoActual;
-
     turno: number = 1;
 
     personajeSeleccionado: PersonajeDTO;
+    estadisticasPersonaje: ElementoListaPersonajesDTO;
+    nombreTexturaJugador: string;
+
+    enemigo: EnemigoDTO;
+    nivelEnemigo: number;
+    nombreTexturaEnemigo: string;
 
     vidaJugador: number = 100;
     vidaEnemigo: number = 100;
 
-    ataqueBaseJugador: number = 10;
-    ataqueBaseEnemigo: number = 10;
-
-    probaCriticoJugador: number = 3;
-    probaFallarJugador: number = 3;
-
-    inventarioBatallaJugadorMax: number = 10;
+    private readonly inventarioBatallaJugadorMax: number = 10;
 
     inventario: Record<string, IObjeto> = {
         pocion_pq: {
-            nombre: "Small Potion",
+            nombre: "Poción pequeña",
             imagen: "Vida_sml",
             cantidad: 2,
             efecto: () => {
                 if (this.inventario["pocion_pq"].cantidad > 0) {
                     this.vidaJugador = Math.min(this.vidaJugador + 20, 100);
                     this.actualizarBarraVida(this.vidaJugador, "player1");
-                    this.mostrarTextoTurnos(20, "player", "heal");
+                    this.mostrarTextoTurnos(20, "player", "curar");
 
                     this.inventario["pocion_pq"].cantidad--;
 
@@ -64,15 +68,25 @@ export default class BatallaEscena extends Phaser.Scene {
         },
     };
 
-    // Variables enemigos
-    probFallarEnemigo: number = 3;
-
     constructor() {
         super("EscenaBatalla");
     }
 
-    init(data: { personajeSeleccionado: PersonajeDTO }) {
+    async init(data: {
+        personajeSeleccionado: PersonajeDTO;
+        estadisticas: ElementoListaPersonajesDTO;
+        enemigo: EnemigoDTO;
+        nivelEnemigo: number;
+    }) {
+        // Personaje
         this.personajeSeleccionado = data.personajeSeleccionado;
+        this.estadisticasPersonaje = data.estadisticas;
+        this.nombreTexturaJugador = `jugador_personaje_${this.personajeSeleccionado.id}`;
+
+        // Enemigo
+        this.enemigo = data.enemigo;
+        this.nivelEnemigo = data.nivelEnemigo;
+        this.nombreTexturaEnemigo = `enemigo_${this.enemigo.id}`;
     }
 
     preload() {
@@ -82,7 +96,7 @@ export default class BatallaEscena extends Phaser.Scene {
         if (this.textures.exists("fondo")) {
             this.textures.remove("fondo");
         }
-        this.load.image("fondo", "assets/backgrounds/bosque.png");
+        this.load.image("fondo", Assets.fondoBosque_sprite);
 
         // Recarga el suelo
         if (this.textures.exists("suelo")) {
@@ -97,158 +111,160 @@ export default class BatallaEscena extends Phaser.Scene {
         );
 
         this.load.aseprite(
-            `jugador_personaje_${this.personajeSeleccionado.id}`,
+            this.nombreTexturaJugador,
             this.personajeSeleccionado.spriteURL,
             this.personajeSeleccionado.jsonURL
         );
 
         this.load.aseprite(
-            "esquleto",
-            "assets/enemies/skeleton/Esqueleto-phaser.png",
-            "assets/enemies/skeleton/Esqueleto-phaser.json"
+            this.nombreTexturaEnemigo,
+            this.enemigo!.spriteURL,
+            this.enemigo!.jsonURL
         );
     }
 
     create() {
         const { width, height } = this.scale;
 
-        // Limpia las animaciones
-        this.anims.anims.clear();
-
         // Otras escenas
         this.batallaHUD = this.scene.get("BatallaHUD") as BatallaHUD;
-
-        // Frames para los arboles
-        const framesArboles = ["Arbol-0", "Arbol-1", "Arbol-2"];
-        // Crea el escenario
-        this.crearEscenario(width, height);
-        // Crea los arboles aleatoriamente
-        this.crearArbolesAleatorio(framesArboles);
-        // Creación de los personajes
-        this.crearPersonajes(width, height);
-
-        // Load the HUD in top of this scene
         this.scene.launch("BatallaHUD");
 
-        // Iniziates the turn text
-        this.time.delayedCall(50, () => {
-            this.mostrarTextoTurnos(this.turno, "turns", "showTurn");
+        // Espera a que BatallaHUD esté lista
+        this.scene.get("BatallaHUD").events.once("create", () => {
+            // Crea el escenario y personajes
+            this.crearEscenario(width, height);
+            this.crearArbolesAleatorio(["Arbol-0", "Arbol-1", "Arbol-2"]);
+            this.crearPersonajes(width, height);
+
+            // Inicia el texto de turnos
+            this.mostrarTextoTurnos(this.turno, "turns", "mostrarLog");
             this.turno++;
+
+            // Configura eventos
+            this.configurarEventos();
         });
+    }
 
-        // Eventos ---------------------------------------------
-        // Personajes eventos....................................
-
-        // Personajes ataque
-        this.events.on("character-attack", async () => {
-            // If its not the player turn it will not play the animation
+    // Configura los eventos
+    private configurarEventos() {
+        this.events.on("personaje-ataque", async () => {
             if (this.estadoActual !== EstadoBatalla.TurnoJugador) return;
-
-            // Waits for the player attack
             await this.ataqueJugador();
             this.estadoActual = EstadoBatalla.FinalizarTurno;
             this.siguienteTurno();
         });
 
-        // Usar un objeto
-        this.events.on("use-item", (item: IObjeto) => {
-            item.efecto();
-        });
+        this.events.on("use-item", (item: IObjeto) => item.efecto());
     }
 
     // Creación de elementos----------------------------------------------
     // Crea los elementos de los personajes
-    crearPersonajes(width: number, height: number) {
-        // Personajes -----------------------------------------
-
+    private crearPersonajes(width: number, height: number) {
         // Esqueleto
-        this.generarAnimacion("esquleto");
+        this.generarAnimacion(this.nombreTexturaEnemigo);
 
         this.enemigo1 = this.add
-            .sprite(width / 1.5, height / 1.4, "esquleto", 16)
+            .sprite(width / 1.5, height / 1.4, this.nombreTexturaEnemigo, 16)
             .setOrigin(0.5, 0.5)
             .setScale(4, 4);
 
-        this.enemigo1.anims.timeScale = 0.3;
-        this.reproducirAnimacionIdle(this.enemigo1, "esquleto", "Idle_izq");
-
-        this.time.delayedCall(50, () => {
-            this.crearBarraVida(
-                this.enemigo1.x,
-                this.enemigo1.y,
-                this.vidaEnemigo,
-                "enemy1"
-            );
-        });
+        this.reproducirAnimacionIdle(
+            this.enemigo1,
+            this.nombreTexturaEnemigo,
+            "Idle_izq",
+            0.3
+        );
+        this.crearBarraVida(
+            this.enemigo1.x,
+            this.enemigo1.y,
+            this.vidaEnemigo,
+            "enemy1"
+        );
+        this.crearTextoNivel(
+            this.enemigo1.x,
+            this.enemigo1.y,
+            this.nivelEnemigo
+        );
 
         // Personaje
-        this.generarAnimacion("jugador");
+        this.generarAnimacion(this.nombreTexturaJugador);
 
         this.personaje = this.add
-            .sprite(width / 3.5, height / 1.4, "jugador", 0)
+            .sprite(width / 3.5, height / 1.4, this.nombreTexturaJugador, 0)
             .setOrigin(0.5, 0.5)
             .setScale(4, 4);
 
-        this.reproducirAnimacionIdle(this.personaje, "jugador", "Idle_combate");
-
-        this.time.delayedCall(50, () => {
-            this.crearBarraVida(
-                this.personaje.x,
-                this.personaje.y,
-                this.vidaJugador,
-                "player1"
-            );
-        });
+        this.reproducirAnimacionIdle(
+            this.personaje,
+            this.nombreTexturaJugador,
+            "Idle_combate"
+        );
+        this.reproducirAnimacionIdle(
+            this.personaje,
+            this.nombreTexturaJugador,
+            "Idle_combate",
+            0.3
+        );
+        this.crearBarraVida(
+            this.personaje.x,
+            this.personaje.y,
+            this.vidaJugador,
+            "player1"
+        );
+        this.crearTextoNivel(
+            this.personaje.x,
+            this.personaje.y,
+            this.estadisticasPersonaje.nivel
+        );
     }
 
-    crearEscenario(width: number, height: number) {
+    private crearEscenario(width: number, height: number) {
         // Fondo -----------------------------------------
-        this.fondo = this.add.sprite(0, 0, "fondo");
-
-        this.fondo.setOrigin(0, 0);
-        this.fondo.setDisplaySize(width, height / 1.5);
+        this.fondo = this.add
+            .sprite(0, 0, "fondo")
+            .setOrigin(0, 0)
+            .setDisplaySize(width, height / 1.5);
 
         // Suelo
         const sueloY = this.fondo.displayHeight;
-        this.suelo = this.add.sprite(0, sueloY, "suelo");
-        this.suelo.setOrigin(0.1, 0.4);
-        this.suelo.setDisplaySize(width * 1.3, (height - sueloY) * 2);
+        this.suelo = this.add
+            .sprite(0, sueloY, "suelo")
+            .setOrigin(0.1, 0.4)
+            .setDisplaySize(width * 1.3, (height - sueloY) * 2);
     }
 
     // Crea un numero aleatorio de arboles
-    crearArbolesAleatorio(framesArboles: string[]) {
+    private crearArbolesAleatorio(framesArboles: string[]) {
         const sueloY = this.fondo.displayHeight;
-
         let numeroArboles = Math.trunc(Math.max(Math.random() * 4));
-
-        let x: number[] = [];
+        const xUsadas: number[] = [];
 
         for (let i = 0; i <= numeroArboles; i++) {
             const frameArbol = Phaser.Math.RND.pick(framesArboles);
-            let xPos = Phaser.Math.Between(0, -4.32);
-
+            let xPos: number;
             do {
                 xPos = Phaser.Math.FloatBetween(-4.32, 0);
-            } while (x.some((usado) => Math.abs(usado - xPos) < 0.9));
+            } while (xUsadas.some((usado) => Math.abs(usado - xPos) < 0.9));
 
-            x.push(xPos);
-
+            xUsadas.push(xPos);
             this.add
                 .sprite(0, sueloY - 200, "arboles", frameArbol)
                 .setOrigin(xPos, 0.5)
-                .setScale(3, 3);
+                .setScale(3);
         }
     }
 
+    // Métodos de HUD -------------------------------------
     // Muestra el texto en el container de los turnos
-    mostrarTextoTurnos(
+    private mostrarTextoTurnos(
         cantidad: number,
         personajes: string,
         accion: string,
         objetivo?: string
     ) {
         this.batallaHUD?.events.emit(
-            "show_text",
+            "mostrar_texto_log",
             cantidad,
             personajes,
             accion,
@@ -257,35 +273,50 @@ export default class BatallaEscena extends Phaser.Scene {
     }
 
     // Muestra un texto en el medio de la escena
-    mostrarMensaje(texto: string) {
-        this.batallaHUD?.events.emit("extra_text", texto);
+    private mostrarMensaje(texto: string) {
+        this.batallaHUD?.events.emit("texto_extra", texto);
     }
 
     // Crea la barra de vida en el HUD
-    crearBarraVida(posX: number, posY: number, vida: number, key: string) {
-        this.batallaHUD?.events.emit(
-            "create_health_bar",
-            posX,
-            posY,
-            vida,
-            key
-        );
+    private crearBarraVida(
+        posX: number,
+        posY: number,
+        vida: number,
+        key: string
+    ) {
+        this.batallaHUD?.events.emit("crear_barra_vida", posX, posY, vida, key);
     }
 
     // Actualiza la barra de vida
     actualizarBarraVida(cantidad: number, key: string) {
-        this.batallaHUD?.events.emit("update_health_bar", cantidad, key);
+        this.batallaHUD?.events.emit("actualizar_barra_vida", cantidad, key);
+    }
+
+    private crearTextoNivel(
+        posX: number,
+        posY: number,
+        nivelPersonaje: number
+    ) {
+        this.batallaHUD?.events.emit("texto_nivel", posX, posY, nivelPersonaje);
     }
 
     // Animaciones y assets ----------------------------------------------
 
     // Genera animaciones individuales para cada elemento que las necesite y así evitar conflictos
-    generarAnimacion(elemento: string) {
+    private generarAnimacion(elemento: string) {
+        // Comprueba si existen las animaciones
+        if (
+            this.anims.exists(`${elemento}_Animacion_defecto`) ||
+            this.anims.exists(`${elemento}_TC_izq`)
+        ) {
+            return;
+        }
+
         const animaciones = this.anims.createFromAseprite(elemento);
         animaciones.forEach((animacion) => {
             const nuevaKey = `${elemento}_${animacion.key}`;
 
-            this.anims.remove(animacion.key); // Opcional: limpia si ya existía
+            this.anims.remove(animacion.key);
 
             this.anims.create({
                 key: nuevaKey,
@@ -301,256 +332,215 @@ export default class BatallaEscena extends Phaser.Scene {
     }
 
     // Reproduce la animacion si el personaje la tiene
-    reproducirAnimacion(
+    private async reproducirAnimacion(
         personaje: GameObjects.Sprite,
         nombreTextura: string,
-        nombreAnimacion: string
+        nombreAnimacion: string,
+        velocidad: number = 1
     ): Promise<void> {
-        return new Promise((resolve) => {
-            let animacion = `${nombreTextura}_${nombreAnimacion}`;
+        const animacion = `${nombreTextura}_${nombreAnimacion}`;
+        if (!personaje.anims.animationManager.get(animacion)) {
+            console.warn(`No se ha encontrado la animación: ${animacion}`);
+            return;
+        }
 
-            if (personaje.anims.animationManager.get(animacion)) {
-                personaje.anims.timeScale = 1;
-                personaje.play(animacion);
-
-                // Cuando acaba la animacion restaura la velocidad de las animaciones
-                personaje.once(`animationcomplete-${animacion}`, () => {
-                    personaje.anims.timeScale = 0.3;
-                    resolve();
-                });
-            } else {
-                // Si no encuentra la animación muestra un mensaje
-                console.warn("The animation was not found");
+        personaje.anims.timeScale = velocidad;
+        personaje.play(animacion);
+        await new Promise<void>((resolve) => {
+            personaje.once(`animationcomplete-${animacion}`, () => {
+                personaje.anims.timeScale = 0.3;
                 resolve();
-            }
+            });
         });
     }
 
     // Reproduce la animacion si el personaje la tiene
     // Para animaciones idle
-    reproducirAnimacionIdle(
+    private async reproducirAnimacionIdle(
         personaje: GameObjects.Sprite,
         nombreTextura: string,
-        nombreAnimacion: string
+        nombreAnimacion: string,
+        velocidad: number = 0.3
     ): Promise<void> {
-        return new Promise((resolve) => {
-            let animacion = `${nombreTextura}_${nombreAnimacion}`;
-
-            if (personaje.anims.animationManager.get(animacion)) {
-                personaje.anims.timeScale = 0.3;
-                personaje.play({ key: animacion, repeat: -1 });
-
-                resolve();
-            } else {
-                // Si no encuentra la animación muestra un mensaje
-                console.warn("The animation was not found");
-                resolve();
-            }
-        });
+        const animacion = `${nombreTextura}_${nombreAnimacion}`;
+        if (!personaje.anims.animationManager.get(animacion)) {
+            console.warn(`No se ha encontrado la animación: ${animacion}`);
+            return;
+        }
+        personaje.anims.timeScale = velocidad;
+        personaje.play({ key: animacion, repeat: -1 });
     }
 
     // Lógica batalla-----------------------------------------------------
 
     // Controla la lógica de los turnos
-    async siguienteTurno() {
-        if (this.estadoActual === EstadoBatalla.TurnoJugador) {
-            // Limpia los textos para el nuevo turno
-            this.batallaHUD?.events.emit("clean_text");
-            this.mostrarTextoTurnos(this.turno, "turns", "showTurn");
-            this.turno++;
+    private async siguienteTurno() {
+        switch (this.estadoActual) {
+            case EstadoBatalla.TurnoJugador:
+                this.batallaHUD?.events.emit("limpiar_texto");
+                this.mostrarTextoTurnos(this.turno, "turns", "mostrarLog");
+                this.turno++;
+                this.batallaHUD?.events.emit("permitir_ataque");
+                break;
 
-            // console.log("Player's Turn");
+            case EstadoBatalla.TurnoEnemigo:
+                await this.ataqueEnemigo();
+                this.estadoActual = EstadoBatalla.FinalizarTurno;
+                this.siguienteTurno();
+                break;
 
-            // Permite al jugador realizar acciones cuando comienza el turno
-            this.batallaHUD?.events.emit("allow-attack");
-
-            return;
-        } else if (this.estadoActual === EstadoBatalla.TurnoEnemigo) {
-            // Espera a que el enemigo ataque
-            // console.log("Enemy's Turn");
-            await this.ataqueEnemigo();
-
-            // Moves to the next turn
-            this.estadoActual = EstadoBatalla.FinalizarTurno;
-            this.siguienteTurno();
-        } else if (this.estadoActual === EstadoBatalla.Animacion) {
-            setTimeout(() => {
-                // console.log("Animations playing");
-
-                // Pasa al siguiente turno
+            case EstadoBatalla.Animacion:
+                await this.esperar(2000);
                 this.estadoActual = EstadoBatalla.TurnoEnemigo;
                 this.siguienteTurno();
-            }, 2000);
-        } else if (this.estadoActual === EstadoBatalla.FinalizarTurno) {
-            if (this.vidaJugador <= 0) {
-                // console.log("Game Over");
+                break;
 
-                this.batallaHUD?.events.emit("desactivar-botones");
-                this.batallaHUD?.events.emit("game_over");
-                this.reproducirAnimacion(this.personaje, "jugador", "Derrota");
+            case EstadoBatalla.FinalizarTurno:
+                this.actualizarBarraVida(this.vidaJugador, "player1");
+                this.actualizarBarraVida(this.vidaEnemigo, "enemy1");
 
-                this.estadoActual = EstadoBatalla.PantallaFin;
-                this.siguienteTurno();
-            } else if (this.vidaEnemigo <= 0) {
-                // console.log("Victory");
-
-                this.batallaHUD?.events.emit("desactivar-botones");
-                this.batallaHUD?.events.emit("victory");
-
-                this.estadoActual = EstadoBatalla.PantallaFin;
-                this.siguienteTurno();
-            } else {
-                setTimeout(() => {
-                    // console.log(
-                    //     `Player:${this.vidaJugador}, Enemy: ${this.vidaEnemigo}`
-                    // );
-
-                    if (this.ultimoEstado === EstadoBatalla.TurnoJugador) {
-                        this.estadoActual = EstadoBatalla.TurnoEnemigo;
-                    } else if (
-                        this.ultimoEstado === EstadoBatalla.TurnoEnemigo
-                    ) {
-                        this.estadoActual = EstadoBatalla.TurnoJugador;
-                    }
-                    this.ultimoEstado = this.estadoActual;
-
-                    // Pasa al siguiente turno
+                if (this.vidaJugador <= 0) {
+                    this.batallaHUD?.events.emit("desactivar-botones");
+                    this.batallaHUD?.events.emit("game_over");
+                    await this.reproducirAnimacion(
+                        this.personaje,
+                        this.nombreTexturaJugador,
+                        "Derrota_derch"
+                    );
+                    this.estadoActual = EstadoBatalla.PantallaFin;
                     this.siguienteTurno();
-                }, 1000);
-            }
+                } else if (this.vidaEnemigo <= 0) {
+                    this.batallaHUD?.events.emit("desactivar-botones");
+                    this.batallaHUD?.events.emit("victory");
+                    await this.reproducirAnimacion(
+                        this.enemigo1,
+                        this.nombreTexturaEnemigo,
+                        "Derrota_derch"
+                    );
+                    this.estadoActual = EstadoBatalla.PantallaFin;
+                    this.siguienteTurno();
+                } else {
+                    await this.esperar(1000);
+                    this.estadoActual =
+                        this.ultimoEstado === EstadoBatalla.TurnoJugador
+                            ? EstadoBatalla.TurnoEnemigo
+                            : EstadoBatalla.TurnoJugador;
+                    this.ultimoEstado = this.estadoActual;
+                    this.siguienteTurno();
+                }
+                break;
 
-            // Actualiza las barras de vida
-            this.actualizarBarraVida(this.vidaJugador, "player1");
-            this.actualizarBarraVida(this.vidaEnemigo, "enemy1");
-        } else if (this.estadoActual === EstadoBatalla.PantallaFin) {
-            return;
+            case EstadoBatalla.PantallaFin:
+                break;
         }
     }
 
     // Logica para el ataque del personaje
-    ataqueJugador(): Promise<void> {
-        return new Promise(async (resolve) => {
-            await this.reproducirAnimacion(
-                this.personaje,
-                "jugador",
-                "Ataque_basico"
-            );
-            this.reproducirAnimacionIdle(
-                this.personaje,
-                "jugador",
-                "Idle_combate"
-            );
+    private async ataqueJugador(): Promise<void> {
+        await this.reproducirAnimacion(
+            this.personaje,
+            this.nombreTexturaJugador,
+            "Ataque_basico"
+        );
+        await this.reproducirAnimacionIdle(
+            this.personaje,
+            this.nombreTexturaJugador,
+            "Idle_combate"
+        );
 
-            let fallo = this.calcularProbabilidad(this.probaFallarJugador);
+        const acierto = this.calcularProbabilidad(
+            this.personajeSeleccionado.precisionBase
+        );
+        if (!acierto) {
+            this.mostrarTextoTurnos(0, "player", "fallo", "enemy1");
+            await this.esperar(500);
+            return;
+        }
 
-            if (fallo) {
-                this.mostrarTextoTurnos(0, "player", "miss", "enemy1");
+        this.enemigo1.setTint(0xff3232);
 
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            } else {
-                this.enemigo1.setTint(0xff0000);
-                setTimeout(() => {
-                    this.enemigo1.clearTint();
-                }, 500);
+        await this.reproducirAnimacion(
+            this.enemigo1,
+            this.nombreTexturaEnemigo,
+            "Dañado_izq"
+        );
+        this.esperar(100);
+        this.enemigo1.clearTint();
+        await this.reproducirAnimacionIdle(
+            this.enemigo1,
+            this.nombreTexturaEnemigo,
+            "Idle_izq"
+        );
 
-                // Calcula el daño del ataque
-                let critico = this.calcularProbabilidad(
-                    this.probaCriticoJugador
-                );
-                let ataqueTotal = this.ataqueBaseJugador * (critico ? 2 : 1);
+        const critico = this.calcularProbabilidad(
+            this.personajeSeleccionado.criticoBase
+        );
+        const ataque =
+            this.personajeSeleccionado.ataqueBase +
+            this.personajeSeleccionado.ataquePorNivel *
+                this.estadisticasPersonaje.nivel;
+        const ataqueTotal = ataque * (critico ? 2 : 1);
 
-                // Baja la vida del enemigo
-                this.vidaEnemigo -= ataqueTotal;
+        this.vidaEnemigo = Math.max(0, this.vidaEnemigo - ataqueTotal);
+        this.actualizarBarraVida(this.vidaEnemigo, "enemy1");
 
-                if (ataqueTotal > 0) {
-                    this.actualizarBarraVida(this.vidaEnemigo, "enemy1");
-                }
+        if (critico) this.mostrarMensaje("¡Golpe crítico!");
+        this.mostrarTextoTurnos(ataqueTotal, "player", "ataque", "enemy1");
 
-                if (critico) {
-                    this.mostrarMensaje("Critical hit!");
-                }
-
-                this.mostrarTextoTurnos(
-                    ataqueTotal,
-                    "player",
-                    "attack",
-                    "enemy1"
-                );
-
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            }
-        });
+        await this.esperar(500);
     }
 
     // Logica para el ataque del enemigo
-    ataqueEnemigo(): Promise<void> {
-        return new Promise(async (resolve) => {
-            await this.reproducirAnimacion(
-                this.enemigo1,
-                "esquleto",
-                "Ataque_izq"
-            );
-            this.reproducirAnimacionIdle(this.enemigo1, "esquleto", "Idle_izq");
+    private async ataqueEnemigo(): Promise<void> {
+        await this.reproducirAnimacion(
+            this.enemigo1,
+            this.nombreTexturaEnemigo,
+            "Ataque_izq"
+        );
+        await this.reproducirAnimacionIdle(
+            this.enemigo1,
+            this.nombreTexturaEnemigo,
+            "Idle_izq"
+        );
 
-            let fallo = this.calcularProbabilidad(this.probaFallarJugador);
+        const acierto = this.calcularProbabilidad(this.enemigo.precisionBase);
+        if (!acierto) {
+            this.mostrarTextoTurnos(0, "enemy", "fallo", "player");
+            await this.esperar(500);
+            return;
+        }
 
-            if (fallo) {
-                this.mostrarTextoTurnos(0, "enemy", "miss", "player");
+        this.personaje.setTint(0xff3232);
+        await this.reproducirAnimacion(
+            this.personaje,
+            this.nombreTexturaJugador,
+            "Dañado_derch"
+        );
+        this.esperar(100);
+        this.personaje.clearTint();
+        await this.reproducirAnimacionIdle(
+            this.personaje,
+            this.nombreTexturaJugador,
+            "Idle_combate"
+        );
 
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            } else {
-                this.personaje.setTint(0xff0000);
-                await this.reproducirAnimacion(
-                    this.personaje,
-                    "jugador",
-                    "Dañado_derch"
-                );
-                setTimeout(() => {
-                    this.personaje.clearTint();
-                }, 500);
-                this.reproducirAnimacionIdle(
-                    this.personaje,
-                    "jugador",
-                    "Idle_combate"
-                );
+        const critico = this.calcularProbabilidad(this.enemigo.criticoBase);
+        const ataque =
+            this.enemigo.ataqueBase +
+            this.enemigo.ataquePorNivel * this.nivelEnemigo;
+        const ataqueTotal = ataque * (critico ? 2 : 1);
 
-                // Calcula el daño del ataque
-                let critico = this.calcularProbabilidad(1);
-                let ataqueTotal = this.ataqueBaseEnemigo * (critico ? 2 : 1);
+        this.vidaJugador = Math.max(0, this.vidaJugador - ataqueTotal);
+        this.actualizarBarraVida(this.vidaJugador, "player1");
 
-                // Baja la vida del enemigo
-                this.vidaJugador -= ataqueTotal;
+        if (critico) this.mostrarMensaje("¡Golpe crítico!");
+        this.mostrarTextoTurnos(ataqueTotal, "enemy", "ataque", "player");
 
-                if (ataqueTotal > 0) {
-                    this.actualizarBarraVida(this.vidaJugador, "player1");
-                }
-
-                if (critico) {
-                    this.mostrarMensaje("Critical hit!");
-                }
-
-                this.mostrarTextoTurnos(
-                    ataqueTotal,
-                    "enemy",
-                    "attack",
-                    "player"
-                );
-
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            }
-        });
+        await this.esperar(500);
     }
 
     // Calcula una probabilidad
-    calcularProbabilidad(probabilidad: number): Boolean {
+    private calcularProbabilidad(probabilidad: number): Boolean {
         let numero = Phaser.Math.Between(1, 10);
 
         if (numero <= probabilidad) {
@@ -558,6 +548,11 @@ export default class BatallaEscena extends Phaser.Scene {
         } else {
             return false;
         }
+    }
+
+    // Espera la cantidad de tiempo que se le indica
+    private async esperar(ms: number): Promise<void> {
+        return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
     update() {}

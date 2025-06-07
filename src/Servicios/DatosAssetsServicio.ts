@@ -240,6 +240,7 @@ export async function obtenerListaUsuarioActual(): Promise<
     return lista;
 }
 
+// Selecciona el personaje que elija el jugador y desselecciona el anterior
 export async function seleccionarPersonaje(viejoID: number, nuevoID: number) {
     // Obtiene el usuario
     const usuario = auth.currentUser;
@@ -286,4 +287,25 @@ export async function seleccionarPersonaje(viejoID: number, nuevoID: number) {
         resultadoNuevo.docs[0].id
     );
     await updateDoc(nuevoDocRef, { seleccionado: true });
+}
+
+// Obtener enemigo aleatorio y su nivel en función del nivel del personaje
+export async function obtnerEnemigoAleatorio(nivelPersonaje: number) {
+    // Obtiene la lista y un ID de enemigo aleatorio
+    const listaEnemigos = await recogerEnemigos();
+    const enemigoID = Phaser.Math.Between(1, listaEnemigos.length);
+
+    let enemigoSeleccionado = listaEnemigos.find(
+        (e) => Number.parseInt(e.id) == enemigoID
+    );
+
+    let nivelEnemigo = Phaser.Math.Between(
+        nivelPersonaje - 1,
+        nivelPersonaje + 1
+    );
+
+    return {
+        enemigoSeleccionado: enemigoSeleccionado,
+        nivelEnemigo: nivelEnemigo > 0 ? nivelEnemigo : 1,
+    };
 }

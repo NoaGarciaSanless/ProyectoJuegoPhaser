@@ -94,7 +94,7 @@ export default class PuebloEscena extends Phaser.Scene {
     }
 
     async create() {
-        // Wait for the loader to complete before creating animations
+        // Espera a que se carguen las texturas necesarias
         await new Promise((resolve) => {
             if (this.load.isReady()) {
                 resolve(null);
@@ -154,7 +154,7 @@ export default class PuebloEscena extends Phaser.Scene {
 
         let casaPrincipal = this.add.sprite(
             (this.suelo.scaleX * this.suelo.width) / 4,
-            height / 1.65,
+            height / 1.66,
             "casaPrincipal"
         );
         casaPrincipal.setOrigin(0.5, 0.5);
@@ -245,19 +245,19 @@ export default class PuebloEscena extends Phaser.Scene {
         const textoInteractuar = this.add
             .text(0, 0, "E", {
                 fontFamily: "MiFuente",
-                fontSize: "96px",
+                fontSize: "30px",
                 color: "#000000",
             })
             .setOrigin(0.5);
 
         // Obtener tamaño del texto
         const bounds = textoInteractuar.getBounds();
-        const padding = 20;
+        const padding = 12;
         const borderRadius = 15;
 
         // Crear fondo con coordenadas relativas al texto (centrado en 0,0)
         const bg = this.add.graphics();
-        bg.fillStyle(0xffffff, 1);
+        bg.fillStyle(0xffffff, 0.7);
         bg.fillRoundedRect(
             -bounds.width / 2 - padding,
             -bounds.height / 2 - padding,
@@ -276,6 +276,11 @@ export default class PuebloEscena extends Phaser.Scene {
             bounds.height + padding * 2
         );
         this.contenedorTexto.setVisible(false);
+
+        // Eventos
+        this.events.on("permitir-movimiento", () => {
+            this.puedeMoverse = true;
+        });
     }
 
     update(): void {
@@ -383,14 +388,16 @@ export default class PuebloEscena extends Phaser.Scene {
         if (objetoCercano) {
             this.contenedorTexto.setVisible(true);
             this.contenedorTexto.setPosition(
-                this.jugador.x,
-                this.jugador.y - 190
+                this.jugador.x - 5,
+                this.jugador.y - 130
             );
 
             //TODO mejorar la lógica
             if (this.teclaE.isDown) {
                 if (objetoCercano.nombre == "teletransporte") {
                     this.tp_siguienteNivel();
+                } else if (objetoCercano.nombre == "casa") {
+                    this.mostraraPanelSeleccionPersonaje();
                 }
             }
         } else {
@@ -400,14 +407,11 @@ export default class PuebloEscena extends Phaser.Scene {
 
     // Genera animaciones individuales para cada elemento que las necesite y así evitar conflictos
     async generarAnimacion(elemento: string) {
-        // Check if animations for this element already exist
+        // Comprueba si existen las animaciones
         if (
             this.anims.exists(`${elemento}_Animacion_defecto`) ||
             this.anims.exists(`${elemento}_TC_izq`)
         ) {
-            console.log(
-                `Animations for ${elemento} already exist, skipping creation.`
-            );
             return;
         }
 
@@ -415,7 +419,7 @@ export default class PuebloEscena extends Phaser.Scene {
         animaciones.forEach((animacion) => {
             const nuevaKey = `${elemento}_${animacion.key}`;
 
-            this.anims.remove(animacion.key); // Opcional: limpia si ya existía
+            this.anims.remove(animacion.key);
 
             this.anims.create({
                 key: nuevaKey,
@@ -466,6 +470,11 @@ export default class PuebloEscena extends Phaser.Scene {
             });
         }
 
+        let estadisticas = this.listaPersonajes.find(
+            (p) =>
+                p.personajeID == Number.parseInt(this.personajeSeleccionado.id)
+        );
+
         this.cameras.main.fadeOut(duracion, 0, 0, 0);
 
         // Cuando completa la animación cambia de pantalla
@@ -473,16 +482,23 @@ export default class PuebloEscena extends Phaser.Scene {
             this.scene.stop("PuebloHUD");
             this.scene.stop("PuebloEscena");
             this.destroy();
-            this.scene.start("EscenaBatalla", {
+            this.scene.start("CargaEscenaBatalla", {
                 personajeSeleccionado: this.personajeSeleccionado,
+                estadisticas: estadisticas,
             });
         });
+    }
+
+    // Emite un evento a la HUD para que muestre el panel de seleccion de personaje
+    mostraraPanelSeleccionPersonaje() {
+        this.puebloHUD.events.emit("mostrar-panel");
+        this.puedeMoverse = false;
     }
 
     destroy() {
         this.events.removeAllListeners();
         this.children.removeAll(true);
-        this.anims.remove(this.nombreTexturaJugador);
-        this.animacionesCargadas = false;
+        // this.anims.remove(this.nombreTexturaJugador);
+        // this.animacionesCargadas = false;
     }
 }

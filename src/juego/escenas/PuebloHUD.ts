@@ -5,11 +5,14 @@ import {
     ElementoListaPersonajesDTO,
     PersonajeDTO,
 } from "../../DTOs/PersonajeDTO";
-import { Scene } from "phaser";
+
 import { seleccionarPersonaje } from "../../Servicios/DatosAssetsServicio";
+import PuebloEscena from "./PuebloEscena";
 
 export default class PuebloHUD extends Phaser.Scene {
     rexUI: RexUIPlugin;
+
+    puebloEscena: PuebloEscena | any;
 
     listaPersonajes: ElementoListaPersonajesDTO[] = [];
     personajeSeleccionado: PersonajeDTO = new PersonajeDTO();
@@ -50,13 +53,19 @@ export default class PuebloHUD extends Phaser.Scene {
     }
 
     create() {
+        this.puebloEscena = this.scene.get("PuebloEscena") as PuebloEscena;
+
         this.menuSeleccionPersonajes = this.generarPanelSeleccionPersonaje();
         // this.add.existing(this.menuSeleccionPersonajes);
         this.menuSeleccionPersonajes.setPosition(
             this.scale.width / 2,
             this.scale.height / 2
         );
-        this.menuSeleccionPersonajes.setVisible(true);
+        this.menuSeleccionPersonajes.setVisible(false);
+
+        this.events.on("mostrar-panel", () => {
+            this.menuSeleccionPersonajes.setVisible(true);
+        });
     }
 
     crearHeaderMenu(anchura: number, altura: number) {
@@ -75,7 +84,10 @@ export default class PuebloHUD extends Phaser.Scene {
 
         backBTN.setInteractive();
 
-        backBTN.on("pointerdown", () => {});
+        backBTN.on("pointerdown", () => {
+            this.menuSeleccionPersonajes.setVisible(false);
+            this.puebloEscena.events.emit("permitir-movimiento");
+        });
 
         backBTN.on("pointerover", () => {
             backBTN.setTint(0xcccccc);
@@ -147,7 +159,7 @@ export default class PuebloHUD extends Phaser.Scene {
                         width: number;
                         height: number;
                     },
-                    cellContainer
+                    cellContainer: any
                 ) {
                     const scene = cell.scene,
                         ancho = cell.width,
@@ -260,6 +272,9 @@ export default class PuebloHUD extends Phaser.Scene {
                                 `Selected character: ${personaje.nombre}`
                             );
                             button.setFrame(1);
+                            scene.puebloEscena.events.emit(
+                                "permitir-movimiento"
+                            );
 
                             try {
                                 await seleccionarPersonaje(
