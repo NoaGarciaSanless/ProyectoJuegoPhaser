@@ -18,6 +18,8 @@ export class EnemigoDTO {
     public debilidad: string;
     public fortaleza: string;
 
+    public tipoAtaquePrincipal: string;
+
     public habilidades: string[];
 
     public spriteURL: string;
@@ -37,6 +39,7 @@ export class EnemigoDTO {
         criticoBase?: number,
         debilidad?: string,
         fortaleza?: string,
+        tipoAtaquePrincipal?: string,
         habilidades?: string[],
         urlSprites?: string,
         urlJSON?: string
@@ -59,6 +62,8 @@ export class EnemigoDTO {
 
         this.debilidad = debilidad || "";
         this.fortaleza = fortaleza || "";
+
+        this.tipoAtaquePrincipal = tipoAtaquePrincipal || "fisico";
 
         this.habilidades = habilidades || [];
 
@@ -86,6 +91,8 @@ export class EnemigoDTO {
 
             debilidad: this.debilidad,
             fortaleza: this.fortaleza,
+
+            tipoAtaquePrincipal: this.tipoAtaquePrincipal,
 
             habilidades: this.habilidades,
 

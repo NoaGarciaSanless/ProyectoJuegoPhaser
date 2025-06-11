@@ -18,6 +18,8 @@ export class PersonajeDTO {
     public debilidad: string;
     public fortaleza: string;
 
+    public tipoAtaquePrincipal: string;
+
     public habilidades: string[];
 
     public spriteURL: string;
@@ -37,6 +39,7 @@ export class PersonajeDTO {
         criticoBase?: number,
         debilidad?: string,
         fortaleza?: string,
+        tipoAtaquePrincipal?: string,
         habilidades?: string[],
         urlSprites?: string,
         urlJSON?: string
@@ -59,6 +62,8 @@ export class PersonajeDTO {
 
         this.debilidad = debilidad || "";
         this.fortaleza = fortaleza || "";
+
+        this.tipoAtaquePrincipal = tipoAtaquePrincipal || "fisico";
 
         this.habilidades = habilidades || [];
 
@@ -86,6 +91,8 @@ export class PersonajeDTO {
 
             debilidad: this.debilidad,
             fortaleza: this.fortaleza,
+
+            tipoAtaquePrincipal: this.tipoAtaquePrincipal,
 
             habilidades: this.habilidades,
 

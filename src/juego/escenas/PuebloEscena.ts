@@ -67,6 +67,8 @@ export default class PuebloEscena extends Phaser.Scene {
 
         this.nombreTexturaJugador = `jugador_personaje_${this.personajeSeleccionado.id}`;
         this.animacionesCargadas = false;
+
+        this.puedeMoverse = true;
     }
 
     preload() {
@@ -82,6 +84,10 @@ export default class PuebloEscena extends Phaser.Scene {
             this.personajeSeleccionado.jsonURL
         );
 
+        // Recarga el suelo
+        if (this.textures.exists("suelo")) {
+            this.textures.remove("suelo");
+        }
         this.load.image("suelo", Assets.sueloPueblo);
         this.load.image("casaHerrero", Assets.casaHerrero);
         this.load.image("casaPrincipal", Assets.casaPrincipal);
@@ -176,9 +182,7 @@ export default class PuebloEscena extends Phaser.Scene {
         if (this.jugador) {
             this.jugador.destroy(); // Destroy existing player sprite if switching characters
         }
-
         await this.generarAnimacion(this.nombreTexturaJugador);
-
         this.jugador = this.add.sprite(
             width / 3.5,
             height / 1.3,
@@ -245,7 +249,7 @@ export default class PuebloEscena extends Phaser.Scene {
         const textoInteractuar = this.add
             .text(0, 0, "E", {
                 fontFamily: "MiFuente",
-                fontSize: "30px",
+                fontSize: "50px",
                 color: "#000000",
             })
             .setOrigin(0.5);
@@ -394,6 +398,20 @@ export default class PuebloEscena extends Phaser.Scene {
 
             //TODO mejorar la lógica
             if (this.teclaE.isDown) {
+                this.jugador.anims.timeScale = 0.3;
+                // Ejecuta la animación
+                if (this.mirarDerecha) {
+                    this.jugador.play({
+                        key: `${this.nombreTexturaJugador}_Idle_derch`,
+                        repeat: -1,
+                    });
+                } else {
+                    this.jugador.play({
+                        key: `${this.nombreTexturaJugador}_Idle_izq`,
+                        repeat: -1,
+                    });
+                }
+
                 if (objetoCercano.nombre == "teletransporte") {
                     this.tp_siguienteNivel();
                 } else if (objetoCercano.nombre == "casa") {
@@ -406,14 +424,12 @@ export default class PuebloEscena extends Phaser.Scene {
     }
 
     // Genera animaciones individuales para cada elemento que las necesite y así evitar conflictos
-    async generarAnimacion(elemento: string) {
+    private async generarAnimacion(elemento: string) {
         // Comprueba si existen las animaciones
-        if (
-            this.anims.exists(`${elemento}_Animacion_defecto`) ||
-            this.anims.exists(`${elemento}_TC_izq`)
-        ) {
-            return;
-        }
+        let animacionesExisten = Object.keys(this.anims.anims.entries).some(
+            (nombre) => nombre.startsWith(elemento)
+        );
+        if (animacionesExisten) return;
 
         const animaciones = this.anims.createFromAseprite(elemento);
         animaciones.forEach((animacion) => {
@@ -456,20 +472,6 @@ export default class PuebloEscena extends Phaser.Scene {
             key: "tp_Animacion_tp",
         });
 
-        this.jugador.anims.timeScale = 0.3;
-        // Ejecuta la animación
-        if (this.mirarDerecha) {
-            this.jugador.play({
-                key: `${this.nombreTexturaJugador}_Idle_derch`,
-                repeat: -1,
-            });
-        } else {
-            this.jugador.play({
-                key: `${this.nombreTexturaJugador}_Idle_izq`,
-                repeat: -1,
-            });
-        }
-
         let estadisticas = this.listaPersonajes.find(
             (p) =>
                 p.personajeID == Number.parseInt(this.personajeSeleccionado.id)
@@ -495,10 +497,5 @@ export default class PuebloEscena extends Phaser.Scene {
         this.puedeMoverse = false;
     }
 
-    destroy() {
-        this.events.removeAllListeners();
-        this.children.removeAll(true);
-        // this.anims.remove(this.nombreTexturaJugador);
-        // this.animacionesCargadas = false;
-    }
+    destroy() {}
 }

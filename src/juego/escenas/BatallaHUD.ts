@@ -6,6 +6,8 @@ import BatallaEscena from "./BatallaEscena";
 // Plugin para crear elementos y hacer textos de colores
 import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
 import { IObjeto } from "../../DTOs/ObjetoDTO";
+import { Assets } from "../../compartido/Assets";
+import { actualizarEstadisticasPersonaje } from "../../Servicios/DatosAssetsServicio";
 
 export default class BatallaHUD extends Phaser.Scene {
     rexUI: RexUIPlugin;
@@ -13,11 +15,12 @@ export default class BatallaHUD extends Phaser.Scene {
     // Contenedores para agrupar los elementos en la escena
     contenedorBotones: GameObjects.Container;
     contenedorTexto: GameObjects.Container;
+    contenedorInfoFinBatalla: GameObjects.Container;
 
     // Sprites usados en la escena
     // Botones
     atkBTN: GameObjects.Sprite;
-    defBTN: GameObjects.Sprite;
+    habBTN: GameObjects.Sprite;
     invBTN: GameObjects.Sprite;
 
     // Barras de vida
@@ -40,41 +43,53 @@ export default class BatallaHUD extends Phaser.Scene {
         super({ key: "BatallaHUD", active: false, visible: true });
     }
 
+    init() {
+        // Valores iniciales para la escena
+        this.puedeAtacar = true;
+        this.invAbierto = false;
+        this.barrasVida = {};
+    }
+
     preload() {
         this.cameras.main.fadeIn(2500, 0, 0, 0);
 
         this.load.aseprite(
             "botones",
-            "assets/buttons/botones_anim.png",
-            "assets/buttons/botones_anim.json"
+            Assets.botones_combate_sprite,
+            Assets.botones_combate_json
+        );
+        this.load.image("botonVolver", Assets.flechaVolver_sprite);
+        this.load.aseprite(
+            "botonPueblo",
+            Assets.puebloBTN_sprite,
+            Assets.puebloBTN_json
+        );
+        this.load.aseprite(
+            "botonContinuar",
+            Assets.continuarBTN_sprite,
+            Assets.continuarBTN_json
         );
 
         this.load.aseprite(
             "iconos",
-            "assets/UI/iconosUI_phaser.png",
-            "assets/UI/iconosUI_phaser.json"
+            Assets.iconos_elementos_ui_sprite,
+            Assets.iconos_elementos_ui_json
         );
 
         this.load.aseprite(
             "recursos",
-            "assets/UI/game_resources/recursos.png",
-            "assets/UI/game_resources/recursos.json"
+            Assets.iconos_recursos_sprite,
+            Assets.iconos_recursos_json
         );
 
-        this.load.image("backbutton", "assets/buttons/back.png");
-
-        this.load.image(
-            "inventarioFondo",
-            "assets/UI/inventory/inventoryBackground.png"
-        );
-
-        this.load.image(
-            "inventarioSlot",
-            "assets/UI/inventory/inventorySlot.png"
-        );
+        this.load.image("fondoInventarios", Assets.fondoInventario_sprite);
+        this.load.image("inventarioSlot", Assets.fondoSlot_inventario_sprite);
     }
 
     create() {
+        // Limpia los listeners
+        this.eliminarEventos();
+
         const { width, height } = this.scale;
 
         // Otras escenas
@@ -120,7 +135,7 @@ export default class BatallaHUD extends Phaser.Scene {
             width / 10,
             height / 10
         );
-        this.defBTN = this.crearBoton(
+        this.habBTN = this.crearBoton(
             0,
             0,
             "botones",
@@ -137,7 +152,7 @@ export default class BatallaHUD extends Phaser.Scene {
             height / 10
         );
 
-        const btnList = [this.atkBTN, this.defBTN, this.invBTN];
+        const btnList = [this.atkBTN, this.habBTN, this.invBTN];
         this.contenedorBotones.add(btnList);
         this.distribuirElementos(btnList, width);
     }
@@ -210,7 +225,7 @@ export default class BatallaHUD extends Phaser.Scene {
                 y,
                 width: invWidth,
                 height: invHeight,
-                background: this.add.image(0.5, 0.5, "inventarioFondo"),
+                background: this.add.image(0.5, 0.5, "fondoInventarios"),
                 scrollMode: 0,
                 table: {
                     cellWidth: anchoCelda,
@@ -311,7 +326,7 @@ export default class BatallaHUD extends Phaser.Scene {
 
     private crearHeaderInventario(anchura: number, altura: number) {
         const backBTN = this.add
-            .image(anchura / 2 - 50, 80, "backbutton")
+            .image(anchura / 2 - 50, 80, "botonVolver")
             .setDisplaySize(90, 80)
             .setOrigin(1, 0.9)
             .setInteractive()
@@ -370,12 +385,24 @@ export default class BatallaHUD extends Phaser.Scene {
             }
         );
 
-        this.events.on("game_over", () =>
-            this.mostrarMensajeFinal("Game Over!", this.scale.width / 3.5)
+        this.events.on("derrota", () => {
+            this.mostrarMensajeFinal("Game Over!", this.scale.width / 3.5);
+        });
+        this.events.on("victoria", () => {
+            this.mostrarMensajeFinal("Victoria!", this.scale.width / 3);
+        });
+        this.events.on(
+            "mostrar_pantalla_fin",
+            (exp: number, resultado: string) => {
+                this.crearContenedorFinBatalla(
+                    exp,
+                    this.scale.width / 2,
+                    this.scale.height / 2,
+                    resultado
+                );
+            }
         );
-        this.events.on("victory", () =>
-            this.mostrarMensajeFinal("Victory!", this.scale.width / 3)
-        );
+
         this.events.on(
             "mostrar_texto_log",
             (
@@ -575,10 +602,10 @@ export default class BatallaHUD extends Phaser.Scene {
             .fillStyle(0x000000, 0.4)
             .fillRect(-bgWidth / 2, 20, bgWidth, bgHeight);
 
-        let texto = this.add.text(
+        let texto = this.rexUI.add.BBCodeText(
             -bgWidth * 0.25,
             bgHeight * 0.8,
-            `Nivel ${nivelPersonaje}`,
+            `Nivel [color=yellow]${nivelPersonaje}[/color]`,
             {
                 fontFamily: "MiFuente",
                 fontSize: "16px",
@@ -594,7 +621,7 @@ export default class BatallaHUD extends Phaser.Scene {
         this.invAbierto = !this.invAbierto;
         this.inventario.setVisible(this.invAbierto);
 
-        const botones = [this.atkBTN, this.defBTN, this.invBTN];
+        const botones = [this.atkBTN, this.habBTN, this.invBTN];
         botones.forEach((boton) =>
             this.invAbierto
                 ? boton.disableInteractive()
@@ -603,16 +630,115 @@ export default class BatallaHUD extends Phaser.Scene {
     }
 
     private desactivarBotones() {
-        [this.atkBTN, this.defBTN, this.invBTN].forEach((boton) =>
+        [this.atkBTN, this.habBTN, this.invBTN].forEach((boton) =>
             boton.disableInteractive()
         );
+    }
+
+    private activarBotones() {
+        [this.atkBTN, this.habBTN, this.invBTN].forEach((boton) =>
+            boton.setInteractive()
+        );
+    }
+
+    private async crearContenedorFinBatalla(
+        exp: number,
+        posX: number,
+        posY: number,
+        resultado: string
+    ) {
+        this.contenedorInfoFinBatalla = this.add.container(posX, posY);
+
+        let fondo = this.add.image(0, 0, "fondoInventarios").setScale(4, 4);
+
+        let textoExperiencia = this.rexUI.add.BBCodeText(
+            fondo.width - fondo.width * 2.6,
+            fondo.height - fondo.height * 2,
+            `Puntos de experiencia obtenidos: [color=yellow]${exp}[/color]`,
+            {
+                fontFamily: "MiFuente",
+                fontSize: "30px",
+                color: "#000000",
+            }
+        );
+
+        // Botón de volver al pueblo junto con los eventos que activa
+        let botonPueblo = this.add
+            .sprite(
+                fondo.width - fondo.width * 2,
+                fondo.height - fondo.height * 0.1,
+                "botonPueblo",
+                0
+            )
+            .setScale(2, 2)
+            .setInteractive()
+            .on("pointerdown", () => {
+                botonPueblo.setFrame(1);
+            })
+            .on("pointerup", () => {
+                botonPueblo.setFrame(0);
+                this.batallaEscena.events.emit("volver_al_pueblo");
+            });
+
+        // Botón de continuar junto con los eventos que activa
+        let botonContinuar = this.add
+            .sprite(
+                fondo.width,
+                fondo.height - fondo.height * 0.1,
+                "botonContinuar",
+                0
+            )
+            .setScale(2, 2)
+            .setInteractive()
+            .on("pointerdown", () => {
+                botonContinuar.setFrame(1);
+            })
+            .on("pointerup", () => {
+                botonContinuar.setFrame(0);
+                // Si han derrotado al jugador, vuelve al pueblo
+                if (resultado !== "victoria") {
+                    this.batallaEscena.events.emit("volver_al_pueblo");
+                } else {
+                    this.batallaEscena.events.emit("siguiente_batalla");
+                }
+            });
+
+        this.contenedorInfoFinBatalla.add([
+            fondo,
+            textoExperiencia,
+            botonPueblo,
+            botonContinuar,
+        ]);
+
+        await actualizarEstadisticasPersonaje(
+            Number.parseInt(this.batallaEscena.personajeSeleccionado.id),
+            exp
+        );
+    }
+
+    private eliminarEventos() {
+        // Eliminar solo listeners específicos
+        this.events.off("permitir_ataque");
+        this.events.off("cancelar-ataque");
+        this.events.off("desactivar-botones");
+        this.events.off("crear_barra_vida");
+        this.events.off("actualizar_barra_vida");
+        this.events.off("texto_nivel");
+        this.events.off("derrota");
+        this.events.off("victoria");
+        this.events.off("mostrar_pantalla_fin");
+        this.events.off("mostrar_texto_log");
+        this.events.off("limpiar_texto");
+        this.events.off("texto_extra");
     }
 
     update() {}
 
     destroy() {
-        this.events.removeAllListeners();
-        this.children.removeAll();
-        this.textures.destroy();
+        // Elimina los contenedores
+        this.contenedorTexto?.removeAll(true);
+        this.contenedorInfoFinBatalla?.removeAll(true);
+        this.contenedorInfoFinBatalla?.removeAll(true);
+        this.inventario?.destroy();
     }
 }

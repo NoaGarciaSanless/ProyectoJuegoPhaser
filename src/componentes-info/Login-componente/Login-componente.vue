@@ -7,8 +7,13 @@ import {
     comprobarUsuario,
 } from "../../Servicios/UsuariosServicio";
 
+// Props
+const props = defineProps({
+    visible: Boolean,
+});
+
 // Eventos
-const emit = defineEmits(["usuarioLogeado"]);
+const emit = defineEmits(["usuarioLogeado", "close"]);
 
 // Variables de vista
 let esLoginVista = ref(true);
@@ -77,6 +82,7 @@ function registrar() {
         .then((resultado) => {
             console.log(resultado);
             emit("usuarioLogeado", resultado);
+            emit("close");
             vaciarFormularios();
         })
         .catch((error) => {
@@ -99,6 +105,7 @@ function iniciarSesion() {
         .then((resultado) => {
             console.log(resultado);
             emit("usuarioLogeado", resultado);
+            emit("close");
         })
         .catch((error) => {
             if (typeof error === "string") {
@@ -117,123 +124,95 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div id="componeteLogin">
-        <div class="contenedorTransicion" aria-live="polite">
-            <transition name="fade" mode="out-in">
-                <div id="login" v-if="esLoginVista" key="login">
-                    <div class="contenedorForm">
-                        <h3>Login</h3>
-                        <form>
-                            <div class="campo">
-                                <label for="loginLogin"
-                                    >Usuario o email:
-                                </label>
-                                <input
-                                    type="text"
-                                    id="loginLogin"
-                                    v-model="nombreLogin"
-                                />
+    <div v-if="visible" class="modal-overlay">
+        <div class="modal-content">
+            <button @click="$emit('close')" class="close-btn">&times;</button>
+
+            <div id="componeteLogin">
+                <div class="contenedorTransicion" aria-live="polite">
+                    <transition name="fade" mode="out-in">
+                        <div id="login" v-if="esLoginVista" key="login">
+                            <div class="contenedorForm">
+                                <h3>Login</h3>
+                                <form>
+                                    <div class="campo">
+                                        <label for="loginLogin">Usuario o email:
+                                        </label>
+                                        <input type="text" id="loginLogin" v-model="nombreLogin" />
+                                    </div>
+
+                                    <div class="campo">
+                                        <label for="contrasenhaLogin">Contraseña:
+                                        </label>
+                                        <input type="password" id="contrasenhaLogin" v-model="contrasenhaLogin" />
+                                    </div>
+
+                                    <p v-if="mensajesError.login">
+                                        {{ mensajesError.login }}
+                                    </p>
+
+                                    <button @click.prevent="iniciarSesion" class="enviarFormBTN">
+                                        Login
+                                    </button>
+                                </form>
                             </div>
 
-                            <div class="campo">
-                                <label for="contrasenhaLogin"
-                                    >Contraseña:
-                                </label>
-                                <input
-                                    type="password"
-                                    id="contrasenhaLogin"
-                                    v-model="contrasenhaLogin"
-                                />
+                            <div id="seccionRegistro">
+                                <span>¿No tienes cuenta?</span>
+                                <button @click="alternarFormulario" class="registro">
+                                    Registrarse
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="registro" v-else key="registro">
+                            <div class="contenedorForm">
+                                <h3>Registro</h3>
+                                <form>
+                                    <div class="campo">
+                                        <label for="loginRegistro">Usuario: </label>
+                                        <input type="text" id="loginRegistro" v-model="nombreRegistro" />
+                                    </div>
+
+                                    <div class="campo">
+                                        <label for="emailRegistro">Email: </label>
+                                        <input type="email" id="emailRegistro" v-model="emailRegistro" />
+                                    </div>
+
+                                    <div class="campo">
+                                        <label for="contrasenhaRegistro">Contraseña:
+                                        </label>
+                                        <input type="password" id="contrasenhaRegistro" v-model="contrasenhaRegistro" />
+                                    </div>
+
+                                    <div class="campo">
+                                        <label for="contrasenhaVRegistro">Verifíca contraseña:
+                                        </label>
+                                        <input type="password" id="contrasenhaVRegistro"
+                                            v-model="contrasenhaVRegistro" />
+                                    </div>
+
+                                    <p v-if="mensajesError.registro" class="error">
+                                        {{ mensajesError.registro }}
+                                    </p>
+
+                                    <button @click.prevent="registrar" class="enviarFormBTN">
+                                        Registrarse
+                                    </button>
+                                </form>
                             </div>
 
-                            <p v-if="mensajesError.login">
-                                {{ mensajesError.login }}
-                            </p>
-
-                            <button
-                                @click.prevent="iniciarSesion"
-                                class="enviarFormBTN"
-                            >
-                                Login
-                            </button>
-                        </form>
-                    </div>
-
-                    <div id="seccionRegistro">
-                        <span>¿No tienes cuenta?</span>
-                        <button @click="alternarFormulario" class="registro">
-                            Registrarse
-                        </button>
-                    </div>
+                            <div class="opciones">
+                                <button @click="alternarFormulario" class="cancelar">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </transition>
                 </div>
-
-                <div id="registro" v-else key="registro">
-                    <div class="contenedorForm">
-                        <h3>Registro</h3>
-                        <form>
-                            <div class="campo">
-                                <label for="loginRegistro">Usuario: </label>
-                                <input
-                                    type="text"
-                                    id="loginRegistro"
-                                    v-model="nombreRegistro"
-                                />
-                            </div>
-
-                            <div class="campo">
-                                <label for="emailRegistro">Email: </label>
-                                <input
-                                    type="email"
-                                    id="emailRegistro"
-                                    v-model="emailRegistro"
-                                />
-                            </div>
-
-                            <div class="campo">
-                                <label for="contrasenhaRegistro"
-                                    >Contraseña:
-                                </label>
-                                <input
-                                    type="password"
-                                    id="contrasenhaRegistro"
-                                    v-model="contrasenhaRegistro"
-                                />
-                            </div>
-
-                            <div class="campo">
-                                <label for="contrasenhaVRegistro"
-                                    >Verifíca contraseña:
-                                </label>
-                                <input
-                                    type="password"
-                                    id="contrasenhaVRegistro"
-                                    v-model="contrasenhaVRegistro"
-                                />
-                            </div>
-
-                            <p v-if="mensajesError.registro" class="error">
-                                {{ mensajesError.registro }}
-                            </p>
-
-                            <button
-                                @click.prevent="registrar"
-                                class="enviarFormBTN"
-                            >
-                                Registrarse
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="opciones">
-                        <button @click="alternarFormulario" class="cancelar">
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            </transition>
+            </div>
         </div>
     </div>
 </template>
 
 <style src="./Login-componente.css" scoped></style>
-

@@ -4,49 +4,42 @@ import vue from '@vitejs/plugin-vue'
 
 const phasermsg = () => {
     return {
-        name: 'phasermsg',
+        name: "phasermsg",
         buildStart() {
             process.stdout.write(`Building for production...\n`);
         },
-        buildEnd() {
-            const line = "---------------------------------------------------------";
-            const msg = `❤️❤️❤️ Tell us about your game! - games@phaser.io ❤️❤️❤️`;
-            process.stdout.write(`${line}\n${msg}\n${line}\n`);
-
-            process.stdout.write(`✨ Done ✨\n`);
-        }
-    }
-}
+        buildEnd() {},
+    };
+};
 
 export default defineConfig({
-    base: './',
-    plugins: [
-        vue(),
-        phasermsg()
-    ],
+    base: "./",
+    plugins: [vue(), phasermsg()],
     resolve: {
         alias: {
-          '@': fileURLToPath(new URL('../src', import.meta.url))
-        }
-      },
-    logLevel: 'warning',
+            "@": fileURLToPath(new URL("../src", import.meta.url)),
+        },
+    },
+    logLevel: "warning",
     build: {
         rollupOptions: {
             output: {
                 manualChunks: {
-                    phaser: ['phaser']
-                }
-            }
+                    phaser: ["phaser"],
+                },
+            },
         },
-        minify: 'terser',
+        minify: "terser",
         terserOptions: {
             compress: {
-                passes: 2
+                passes: 2,
+                drop_console: true,
+                drop_debugger: true,
             },
             mangle: true,
             format: {
-                comments: false
-            }
-        }
-    }
+                comments: false,
+            },
+        },
+    },
 });

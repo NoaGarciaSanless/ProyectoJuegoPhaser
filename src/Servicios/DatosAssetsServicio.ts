@@ -39,6 +39,7 @@ export function recogerPersonajes(nombre?: string) {
                             valor.criticoBase,
                             valor.debilidad,
                             valor.fortaleza,
+                            valor.tipoAtaquePrincipal,
                             valor.habilidades,
                             valor.spriteURL,
                             valor.jsonURL
@@ -95,6 +96,7 @@ export function recogerEnemigos(nombre?: string) {
                             valor.criticoBase,
                             valor.debilidad,
                             valor.fortaleza,
+                            valor.tipoAtaquePrincipal,
                             valor.habilidades,
                             valor.spriteURL,
                             valor.jsonURL
@@ -199,6 +201,7 @@ export async function obtenerPersonaje(id: number) {
             valor.criticoBase,
             valor.debilidad,
             valor.fortaleza,
+            valor.tipoAtaquePrincipal,
             valor.habilidades,
             valor.spriteURL,
             valor.jsonURL
@@ -287,6 +290,108 @@ export async function seleccionarPersonaje(viejoID: number, nuevoID: number) {
         resultadoNuevo.docs[0].id
     );
     await updateDoc(nuevoDocRef, { seleccionado: true });
+}
+
+// Calcula el nivel en función de la experiencia acumulada
+function calcularNivelPorExperiencia(expTotal: number): number {
+    let nivel = 1;
+    let expRestante = expTotal;
+
+    // Del nivel 1 al 10: cada nivel necesita 500 de exp
+    for (let i = 1; i <= 10; i++) {
+        if (expRestante >= 500) {
+            expRestante -= 500;
+            nivel++;
+        } else {
+            return nivel;
+        }
+    }
+
+    // Del nivel 11 al 30: cada nivel necesita 1000 de exp
+    for (let i = 11; i <= 30; i++) {
+        if (expRestante >= 1000) {
+            expRestante -= 1000;
+            nivel++;
+        } else {
+            return nivel;
+        }
+    }
+
+    // Del nivel 31 al 40: cada nivel necesita 1500 de exp
+    for (let i = 31; i <= 40; i++) {
+        if (expRestante >= 1500) {
+            expRestante -= 1500;
+            nivel++;
+        } else {
+            return nivel;
+        }
+    }
+
+    // A partir del nivel 41: cada nivel necesita 2000 de exp
+    while (true) {
+        if (expRestante >= 2000) {
+            expRestante -= 2000;
+            nivel++;
+        } else {
+            return nivel;
+        }
+    }
+}
+
+// Actualiza el nivel del personaje selecciónado
+export async function actualizarEstadisticasPersonaje(
+    id: number,
+    expObtenida: number
+) {
+    // Obtiene el usuario
+    const usuario = auth.currentUser;
+    if (!usuario) {
+        throw new Error("No hay usuario");
+    }
+
+    // Tabla con la lista de personajes
+    const listaRef = collection(db, "usuarios", usuario.uid, "listaPersonajes");
+
+    // Petición a la lista en la BD para desseleccionar el actual
+    const consulta = query(listaRef, where("seleccionado", "==", true));
+    const resultado = await getDocs(consulta);
+
+    if (!resultado.empty) {
+        let documento = resultado.docs[0];
+        if (documento.data().personajeID === id) {
+            const docRef = doc(
+                db,
+                "usuarios",
+                usuario.uid,
+                "listaPersonajes",
+                documento.id
+            );
+
+            let elementoPersonajes = new ElementoListaPersonajesDTO(
+                documento.id,
+                documento.data().personajeID,
+                documento.data().experiencia,
+                documento.data().nivel,
+                documento.data().seleccionado
+            );
+
+            elementoPersonajes.experiencia += expObtenida;
+
+            // Calcular nuevo nivel real basado en total de experiencia
+            const nuevoNivel = calcularNivelPorExperiencia(
+                elementoPersonajes.experiencia
+            );
+
+            if (nuevoNivel > elementoPersonajes.nivel) {
+                elementoPersonajes.nivel = nuevoNivel;
+            }
+
+            await updateDoc(docRef, {
+                experiencia: elementoPersonajes.experiencia,
+                nivel: elementoPersonajes.nivel,
+            });
+        }
+    }
 }
 
 // Obtener enemigo aleatorio y su nivel en función del nivel del personaje

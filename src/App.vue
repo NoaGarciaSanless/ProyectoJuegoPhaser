@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import Phaser from 'phaser';
-import { nextTick, onMounted, ref } from 'vue';
-
-
+import { onMounted, ref } from 'vue';
 import PhaserGame from './juego/PhaserGame.vue';
 import LoginComponente from './componentes-info/Login-componente/Login-componente.vue';
 import Header from './compartido/Header/Header.vue';
-import { cerrarSesionUsuario, comprobarUsuario } from './Servicios/UsuariosServicio';
 import GuiaComponente from './componentes-info/Guia-componente/Guia-componente.vue';
+import InformacionComponente from "./componentes-info/Informacion-general/Informacion-general.vue";
+
+import { cerrarSesionUsuario, comprobarUsuario } from './Servicios/UsuariosServicio';
 
 
 //  References to the PhaserGame component (game and scene are exposed)
@@ -15,9 +14,19 @@ const phaserRef = ref();
 
 // Variables para cambiar la pantalla del juego
 const fullscreen = ref(false);
+const mostrarModal = ref(false);
 
 // Variables para almacenar el login
 let nombreUsuarioLogeado = ref("");
+
+// Componente seleccionado
+const componenteSeleccionado = ref('InformacionComponente');
+// Lista de componentes
+const componentesDisponibles: Record<string, any> = {
+    'GuiaComponente': GuiaComponente,
+    'InformacionComponente': InformacionComponente
+};
+
 
 // Alterna entre pantalla completa y partida
 async function alternarPantalla() {
@@ -36,6 +45,10 @@ async function cerrarSesion() {
     nombreUsuarioLogeado.value = "";
 }
 
+function cambiarComponente(componente: string) {
+    componenteSeleccionado.value = componente;
+}
+
 onMounted(async () => {
     let hayUsuario: string = await comprobarUsuario();
     nombreUsuarioLogeado.value = hayUsuario;
@@ -46,7 +59,8 @@ onMounted(async () => {
 <template>
 
     <div id="main">
-        <Header :login="nombreUsuarioLogeado" @cerrar-sesion="cerrarSesion"></Header>
+        <Header :login="nombreUsuarioLogeado" @cerrar-sesion="cerrarSesion"
+            @iniciar-sesion="mostrarModal = !mostrarModal"></Header>
 
         <div class="app-container">
 
@@ -67,9 +81,18 @@ onMounted(async () => {
             </div>
 
             <div class="funcionlidades" v-show="!fullscreen">
-                <LoginComponente v-if="nombreUsuarioLogeado == ''" @usuario-logeado="actualizarUsuarioLoggeado" />
-                <div class="seleccion" v-else>
-                    <GuiaComponente />
+                <LoginComponente v-if="mostrarModal" :visible="mostrarModal" @close="mostrarModal = false"
+                    @usuario-logeado="actualizarUsuarioLoggeado" />
+
+                <div class="seleccion">
+                    <div class="botones-seleccion">
+                        <button @click="cambiarComponente('InformacionComponente')">Información</button>
+                        <button @click="cambiarComponente('GuiaComponente')">Guía</button>
+                    </div>
+
+                    <keep-alive>
+                        <component :is="componentesDisponibles[componenteSeleccionado]" />
+                    </keep-alive>
                 </div>
             </div>
 
@@ -136,6 +159,7 @@ onMounted(async () => {
     justify-content: center;
     align-items: center;
 }
+
 .funcionlidades {
     width: 50%;
     height: 100%;
@@ -177,5 +201,29 @@ onMounted(async () => {
 #alternarPantalla:hover {
     transform: scale(1.1);
     background-color: rgba(0, 0, 0, 0.7);
+}
+
+.botones-seleccion {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.botones-seleccion button {
+    padding: 8px 16px;
+    background-color: #333;
+    color: #fff;
+    font-family: "Pixelify Sans", sans-serif;
+    font-size: 1.5em;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.botones-seleccion button:hover {
+    background-color: #555;
 }
 </style>

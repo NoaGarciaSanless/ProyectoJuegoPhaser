@@ -34,6 +34,7 @@ export default class BatallaEscena extends Phaser.Scene {
     estadoActual: EstadoBatalla = EstadoBatalla.TurnoJugador;
     ultimoEstado: EstadoBatalla = this.estadoActual;
     turno: number = 1;
+    resultado: string = "";
 
     personajeSeleccionado: PersonajeDTO;
     estadisticasPersonaje: ElementoListaPersonajesDTO;
@@ -87,6 +88,13 @@ export default class BatallaEscena extends Phaser.Scene {
         this.enemigo = data.enemigo;
         this.nivelEnemigo = data.nivelEnemigo;
         this.nombreTexturaEnemigo = `enemigo_${this.enemigo.id}`;
+
+        // Variables de inicio de escena
+        this.vidaJugador = 100;
+        this.vidaEnemigo = 100;
+        this.turno = 1;
+        this.estadoActual = EstadoBatalla.TurnoJugador;
+        this.resultado = "";
     }
 
     preload() {
@@ -102,12 +110,12 @@ export default class BatallaEscena extends Phaser.Scene {
         if (this.textures.exists("suelo")) {
             this.textures.remove("suelo");
         }
-        this.load.image("suelo", "assets/backgrounds/suelo.png");
+        this.load.image("suelo", Assets.suelo_escenaBatalla_sprite);
 
         this.load.aseprite(
-            "arboles",
-            "assets/decoraciones/assetsNaturaleza.png",
-            "assets/decoraciones/assetsNaturaleza.json"
+            "assets_bosque",
+            Assets.assets_bosque_sprite,
+            Assets.assets_bosque_json
         );
 
         this.load.aseprite(
@@ -124,6 +132,9 @@ export default class BatallaEscena extends Phaser.Scene {
     }
 
     create() {
+        // Limpia los listeners
+        this.eliminarEventos();
+
         const { width, height } = this.scale;
 
         // Otras escenas
@@ -134,7 +145,9 @@ export default class BatallaEscena extends Phaser.Scene {
         this.scene.get("BatallaHUD").events.once("create", () => {
             // Crea el escenario y personajes
             this.crearEscenario(width, height);
+            this.crearRocasAleatorio(["Rocas-0", "Rocas-1", "Rocas-2"]);
             this.crearArbolesAleatorio(["Arbol-0", "Arbol-1", "Arbol-2"]);
+            this.crearArbustosAleatorio(["Arbusto-0", "Arbusto-1"]);
             this.crearPersonajes(width, height);
 
             // Inicia el texto de turnos
@@ -143,6 +156,9 @@ export default class BatallaEscena extends Phaser.Scene {
 
             // Configura eventos
             this.configurarEventos();
+
+            // Se asegura de que se puede atacar
+            this.batallaHUD?.events.emit("permitir_ataque");
         });
     }
 
@@ -156,6 +172,19 @@ export default class BatallaEscena extends Phaser.Scene {
         });
 
         this.events.on("use-item", (item: IObjeto) => item.efecto());
+
+        this.events.on("volver_al_pueblo", () => {
+            this.cameras.main.fadeOut(2500, 0, 0, 0);
+            this.scene.stop("EscenaBatalla");
+            this.scene.stop("BatallaHUD");
+            this.scene.start("CargaEscena");
+        });
+        this.events.on("siguiente_batalla", () => {
+            this.cameras.main.fadeOut(2500, 0, 0, 0);
+            this.scene.stop("EscenaBatalla");
+            this.scene.stop("BatallaHUD");
+            this.scene.start("CargaEscenaBatalla");
+        });
     }
 
     // Creación de elementos----------------------------------------------
@@ -249,7 +278,47 @@ export default class BatallaEscena extends Phaser.Scene {
 
             xUsadas.push(xPos);
             this.add
-                .sprite(0, sueloY - 200, "arboles", frameArbol)
+                .sprite(0, sueloY - 200, "assets_bosque", frameArbol)
+                .setOrigin(xPos, 0.5)
+                .setScale(3);
+        }
+    }
+
+    private crearArbustosAleatorio(framesArbustos: string[]) {
+        const sueloY = this.fondo.displayHeight;
+        let numeroArbustos = Math.trunc(Math.max(Math.random() * 5));
+        const xUsadas: number[] = [];
+
+        for (let i = 0; i <= numeroArbustos; i++) {
+            const frameArbusto = Phaser.Math.RND.pick(framesArbustos);
+            let xPos: number;
+            do {
+                xPos = Phaser.Math.FloatBetween(-4.32, 0);
+            } while (xUsadas.some((usado) => Math.abs(usado - xPos) < 0.9));
+
+            xUsadas.push(xPos);
+            this.add
+                .sprite(0, sueloY - 180, "assets_bosque", frameArbusto)
+                .setOrigin(xPos, 0.5)
+                .setScale(3);
+        }
+    }
+
+    private crearRocasAleatorio(framesRocas: string[]) {
+        const sueloY = this.fondo.displayHeight;
+        let numeroRocas = Math.trunc(Math.max(Math.random() * 3));
+        const xUsadas: number[] = [];
+
+        for (let i = 0; i <= numeroRocas; i++) {
+            const frameRoca = Phaser.Math.RND.pick(framesRocas);
+            let xPos: number;
+            do {
+                xPos = Phaser.Math.FloatBetween(-4.32, 0);
+            } while (xUsadas.some((usado) => Math.abs(usado - xPos) < 0.9));
+
+            xUsadas.push(xPos);
+            this.add
+                .sprite(0, sueloY - 250, "assets_bosque", frameRoca)
                 .setOrigin(xPos, 0.5)
                 .setScale(3);
         }
@@ -305,12 +374,10 @@ export default class BatallaEscena extends Phaser.Scene {
     // Genera animaciones individuales para cada elemento que las necesite y así evitar conflictos
     private generarAnimacion(elemento: string) {
         // Comprueba si existen las animaciones
-        if (
-            this.anims.exists(`${elemento}_Animacion_defecto`) ||
-            this.anims.exists(`${elemento}_TC_izq`)
-        ) {
-            return;
-        }
+        let animacionesExisten = Object.keys(this.anims.anims.entries).some(
+            (nombre) => nombre.startsWith(elemento)
+        );
+        if (animacionesExisten) return;
 
         const animaciones = this.anims.createFromAseprite(elemento);
         animaciones.forEach((animacion) => {
@@ -401,7 +468,9 @@ export default class BatallaEscena extends Phaser.Scene {
 
                 if (this.vidaJugador <= 0) {
                     this.batallaHUD?.events.emit("desactivar-botones");
-                    this.batallaHUD?.events.emit("game_over");
+                    this.batallaHUD?.events.emit("derrota");
+                    this.resultado = "derrota";
+                    await this.esperar(1000);
                     await this.reproducirAnimacion(
                         this.personaje,
                         this.nombreTexturaJugador,
@@ -411,12 +480,14 @@ export default class BatallaEscena extends Phaser.Scene {
                     this.siguienteTurno();
                 } else if (this.vidaEnemigo <= 0) {
                     this.batallaHUD?.events.emit("desactivar-botones");
-                    this.batallaHUD?.events.emit("victory");
                     await this.reproducirAnimacion(
                         this.enemigo1,
                         this.nombreTexturaEnemigo,
-                        "Derrota_derch"
+                        "Derrota_izq"
                     );
+                    this.batallaHUD?.events.emit("victoria");
+                    this.resultado = "victoria";
+                    await this.esperar(1000);
                     this.estadoActual = EstadoBatalla.PantallaFin;
                     this.siguienteTurno();
                 } else {
@@ -431,6 +502,18 @@ export default class BatallaEscena extends Phaser.Scene {
                 break;
 
             case EstadoBatalla.PantallaFin:
+                let experiencia = 0;
+                if (this.resultado == "victoria") {
+                    experiencia = Phaser.Math.Between(100, 200);
+                } else {
+                    experiencia = Phaser.Math.Between(20, 50);
+                }
+
+                this.batallaHUD?.events.emit(
+                    "mostrar_pantalla_fin",
+                    experiencia,
+                    this.resultado
+                );
                 break;
         }
     }
@@ -475,10 +558,8 @@ export default class BatallaEscena extends Phaser.Scene {
         const critico = this.calcularProbabilidad(
             this.personajeSeleccionado.criticoBase
         );
-        const ataque =
-            this.personajeSeleccionado.ataqueBase +
-            this.personajeSeleccionado.ataquePorNivel *
-                this.estadisticasPersonaje.nivel;
+
+        const ataque = this.calcularAtaquePersonaje();
         const ataqueTotal = ataque * (critico ? 2 : 1);
 
         this.vidaEnemigo = Math.max(0, this.vidaEnemigo - ataqueTotal);
@@ -525,9 +606,7 @@ export default class BatallaEscena extends Phaser.Scene {
         );
 
         const critico = this.calcularProbabilidad(this.enemigo.criticoBase);
-        const ataque =
-            this.enemigo.ataqueBase +
-            this.enemigo.ataquePorNivel * this.nivelEnemigo;
+        const ataque = this.calcularAtaqueEnemigo();
         const ataqueTotal = ataque * (critico ? 2 : 1);
 
         this.vidaJugador = Math.max(0, this.vidaJugador - ataqueTotal);
@@ -539,9 +618,45 @@ export default class BatallaEscena extends Phaser.Scene {
         await this.esperar(500);
     }
 
+    private calcularAtaquePersonaje(): number {
+        let ataque = 0;
+
+        if (this.personajeSeleccionado.tipoAtaquePrincipal == "fisico") {
+            ataque =
+                this.personajeSeleccionado.ataqueBase +
+                this.personajeSeleccionado.ataquePorNivel *
+                    this.estadisticasPersonaje.nivel;
+        } else {
+            ataque =
+                this.personajeSeleccionado.ataqueMagicoBase +
+                this.personajeSeleccionado.ataqueMagicoPorNivel *
+                    this.estadisticasPersonaje.nivel;
+        }
+
+        return ataque;
+    }
+
+    private calcularAtaqueEnemigo(): number {
+        let ataque = 0;
+
+        if (this.enemigo.tipoAtaquePrincipal == "fisico") {
+            ataque =
+                this.enemigo.ataqueBase +
+                this.enemigo.ataquePorNivel * this.nivelEnemigo;
+        } else {
+            ataque =
+                this.enemigo.ataqueMagicoBase +
+                this.enemigo.ataqueMagicoPorNivel * this.nivelEnemigo;
+        }
+
+        return ataque;
+    }
+
     // Calcula una probabilidad
     private calcularProbabilidad(probabilidad: number): Boolean {
         let numero = Phaser.Math.Between(1, 10);
+
+        // console.log(`Probabilidad: ${probabilidad} y numero ${numero}`);
 
         if (numero <= probabilidad) {
             return true;
@@ -555,10 +670,14 @@ export default class BatallaEscena extends Phaser.Scene {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
+    private eliminarEventos() {
+        // Eliminar solo listeners específicos
+        this.events.off("personaje-ataque");
+        this.events.off("use-item");
+        this.events.off("volver_al_pueblo");
+    }
+
     update() {}
 
-    destroy() {
-        this.events.removeAllListeners();
-        this.children.removeAll();
-    }
+    destroy() {}
 }
