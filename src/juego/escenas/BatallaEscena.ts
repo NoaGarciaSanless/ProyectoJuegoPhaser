@@ -158,7 +158,7 @@ export default class BatallaEscena extends Phaser.Scene {
             this.configurarEventos();
 
             // Se asegura de que se puede atacar
-            this.batallaHUD?.events.emit("permitir_ataque");
+            this.batallaHUD?.events.emit("permitir_interaccion");
         });
     }
 
@@ -439,7 +439,6 @@ export default class BatallaEscena extends Phaser.Scene {
     }
 
     // Lógica batalla-----------------------------------------------------
-
     // Controla la lógica de los turnos
     private async siguienteTurno() {
         switch (this.estadoActual) {
@@ -447,10 +446,11 @@ export default class BatallaEscena extends Phaser.Scene {
                 this.batallaHUD?.events.emit("limpiar_texto");
                 this.mostrarTextoTurnos(this.turno, "turns", "mostrarLog");
                 this.turno++;
-                this.batallaHUD?.events.emit("permitir_ataque");
+                this.batallaHUD?.events.emit("permitir_interaccion");
                 break;
 
             case EstadoBatalla.TurnoEnemigo:
+                this.batallaHUD?.events.emit("desactivar_interaccion");
                 await this.ataqueEnemigo();
                 this.estadoActual = EstadoBatalla.FinalizarTurno;
                 this.siguienteTurno();
@@ -459,6 +459,7 @@ export default class BatallaEscena extends Phaser.Scene {
             case EstadoBatalla.Animacion:
                 await this.esperar(2000);
                 this.estadoActual = EstadoBatalla.TurnoEnemigo;
+                this.batallaHUD?.events.emit("desactivar_interaccion");
                 this.siguienteTurno();
                 break;
 
@@ -679,5 +680,20 @@ export default class BatallaEscena extends Phaser.Scene {
 
     update() {}
 
-    destroy() {}
+    destroy() {
+        // Destruir sprites
+        this.personaje?.destroy();
+        this.enemigo1?.destroy();
+        this.suelo?.destroy();
+        this.fondo?.destroy();
+
+        // Destruir elementos del escenario (árboles, arbustos, rocas)
+        this.children.list
+            .filter(
+                (child) =>
+                    child instanceof Phaser.GameObjects.Sprite &&
+                    child.texture.key === "assets_bosque"
+            )
+            .forEach((child) => child.destroy());
+    }
 }

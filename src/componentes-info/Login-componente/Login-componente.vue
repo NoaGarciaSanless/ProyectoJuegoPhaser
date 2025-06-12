@@ -86,7 +86,7 @@ function registrar() {
             vaciarFormularios();
         })
         .catch((error) => {
-            console.log(error);
+            mensajesError.value.registro = error;
         });
 }
 

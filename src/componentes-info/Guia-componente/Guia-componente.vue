@@ -181,11 +181,11 @@ onMounted(() => {
                 </div>
 
                 <div class="paginacion">
-                    <button class="paginacionBTN" @click="paginaActual--" :disabled="paginaActual === 1">
+                    <button class="paginacionBTN" @click="paginaActual--" :disabled="paginaActual <= 1">
                         &#9664;
                     </button>
                     <span>Página {{ paginaActual }} de {{ totalPaginas }}</span>
-                    <button class="paginacionBTN" @click="paginaActual++" :disabled="paginaActual === totalPaginas">
+                    <button class="paginacionBTN" @click="paginaActual++" :disabled="paginaActual >= totalPaginas">
                         &#9654;
                     </button>
                 </div>

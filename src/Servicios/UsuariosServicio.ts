@@ -65,8 +65,10 @@ export async function registrarUsuario(
 
         return credenciales.user.displayName;
     } catch (error: any) {
+        console.log(error);
+
         console.log(error.code);
-        let mensajeError = "";
+        let mensajeError = "Error al registrar usuario";
 
         if (error.code === "auth/email-already-in-use") {
             mensajeError = "Este correo ya esta siendo utilizado";
@@ -85,7 +87,7 @@ export async function registrarUsuario(
                 "La contraseña debe contener mayúsculas, caracteres especiales y números";
         }
 
-        throw "Error al iniciar sesión";
+        throw mensajeError;
     }
 }
 

@@ -37,7 +37,7 @@ export default class BatallaHUD extends Phaser.Scene {
     batallaEscena: BatallaEscena;
 
     // Variables
-    puedeAtacar: boolean = true;
+    puedeInteractuar: boolean = true;
 
     constructor() {
         super({ key: "BatallaHUD", active: false, visible: true });
@@ -45,7 +45,7 @@ export default class BatallaHUD extends Phaser.Scene {
 
     init() {
         // Valores iniciales para la escena
-        this.puedeAtacar = true;
+        this.puedeInteractuar = true;
         this.invAbierto = false;
         this.barrasVida = {};
     }
@@ -348,24 +348,41 @@ export default class BatallaHUD extends Phaser.Scene {
     private configurarEventos() {
         this.atkBTN
             .on("pointerdown", () => {
-                if (this.puedeAtacar) {
+                if (this.puedeInteractuar) {
                     this.atkBTN.setFrame(1);
                     this.batallaEscena.events.emit("personaje-ataque");
-                    this.puedeAtacar = false;
+                    this.puedeInteractuar = false;
                 }
             })
             .on("pointerup", () => this.atkBTN.setFrame(0));
 
         this.invBTN
             .on("pointerdown", () => {
-                this.invBTN.setFrame(5);
-                this.alternarInventario();
+                if (this.puedeInteractuar) {
+                    this.invBTN.setFrame(5);
+                    this.alternarInventario();
+                    this.puedeInteractuar = false;
+                }
             })
             .on("pointerup", () => this.invBTN.setFrame(4));
 
         this.events.on("desactivar-botones", () => this.desactivarBotones());
-        this.events.on("permitir_ataque", () => (this.puedeAtacar = true));
-        this.events.on("cancelar-ataque", () => (this.puedeAtacar = false));
+        this.events.on("permitir_interaccion", () => {
+            this.puedeInteractuar = true;
+            this.activarBotones();
+        });
+        this.events.on("desactivar_interaccion", () => {
+            this.puedeInteractuar = false;
+            this.desactivarBotones();
+            if (this.invAbierto) {
+                this.alternarInventario();
+                this.invBTN.setFrame(4);
+            }
+        });
+        this.events.on(
+            "cancelar-ataque",
+            () => (this.puedeInteractuar = false)
+        );
         this.events.on(
             "crear_barra_vida",
             (posX: number, posY: number, health: number, key: string) => {
@@ -718,8 +735,9 @@ export default class BatallaHUD extends Phaser.Scene {
 
     private eliminarEventos() {
         // Eliminar solo listeners específicos
-        this.events.off("permitir_ataque");
+        this.events.off("permitir_interaccion");
         this.events.off("cancelar-ataque");
+        this.events.off("desactivar_interaccion");
         this.events.off("desactivar-botones");
         this.events.off("crear_barra_vida");
         this.events.off("actualizar_barra_vida");
@@ -740,5 +758,12 @@ export default class BatallaHUD extends Phaser.Scene {
         this.contenedorInfoFinBatalla?.removeAll(true);
         this.contenedorInfoFinBatalla?.removeAll(true);
         this.inventario?.destroy();
+        // Eliminar barras de vida
+        Object.values(this.barrasVida).forEach((barra) => barra?.destroy());
+        this.barrasVida = {};
+        // Eliminar botones
+        this.atkBTN?.destroy();
+        this.habBTN?.destroy();
+        this.invBTN?.destroy();
     }
 }

@@ -31,6 +31,7 @@ export default class PuebloEscena extends Phaser.Scene {
 
     // Objetos interactuables
     teletransporte!: GameObjects.Sprite;
+    casaPrincipal: GameObjects.Sprite;
 
     contenedorTexto: GameObjects.Container;
 
@@ -45,6 +46,7 @@ export default class PuebloEscena extends Phaser.Scene {
     // Variables -----------------
     mirarDerecha: boolean = true;
     puedeMoverse: boolean = true;
+    puedeInteractuar: boolean = true;
 
     animacionesCargadas: boolean = false;
 
@@ -69,6 +71,7 @@ export default class PuebloEscena extends Phaser.Scene {
         this.animacionesCargadas = false;
 
         this.puedeMoverse = true;
+        this.puedeInteractuar = true;
     }
 
     preload() {
@@ -129,6 +132,8 @@ export default class PuebloEscena extends Phaser.Scene {
             true
         );
 
+        const { width, height } = this.scale;
+
         // Inicia el HUD del pueblo
         this.puebloHUD = this.scene.get("PuebloHUD") as PuebloHUD;
         this.scene.launch("PuebloHUD", {
@@ -137,153 +142,20 @@ export default class PuebloEscena extends Phaser.Scene {
             todosPersonajesUsuario: this.todosPersonajesUsuario,
         });
 
-        const { width, height } = this.scale;
+        // Wait for PuebloHUD to emit "create" event
+        await new Promise((resolve) => {
+            this.scene.get("PuebloHUD").events.once("create", resolve);
+        });
 
-        // Fondo
-        this.fondo = this.add.sprite(0, 0, "fondo");
-        this.fondo.setOrigin(0, 0);
-        this.fondo.setDisplaySize(width, height);
-        this.fondo.setScrollFactor(0);
-
-        // Mapa
-        this.suelo = this.add.sprite(0, height / 2.7, "suelo");
-        this.suelo.setOrigin(0, 0);
-        this.suelo.setScale(4, 4);
-
-        let casaHerrero = this.add.sprite(
-            (this.suelo.scaleX * this.suelo.width) / 1.57,
-            height / 3.8,
-            "casaHerrero"
-        );
-        casaHerrero.setOrigin(0, 0);
-        casaHerrero.setScale(4, 4);
-
-        let casaPrincipal = this.add.sprite(
-            (this.suelo.scaleX * this.suelo.width) / 4,
-            height / 1.66,
-            "casaPrincipal"
-        );
-        casaPrincipal.setOrigin(0.5, 0.5);
-        casaPrincipal.setScale(4, 4);
-
-        this.generarAnimacion("tp");
-        this.teletransporte = this.add.sprite(
-            (this.suelo.scaleX * this.suelo.width) / 1.15,
-            height / 1.47,
-            "tp",
-            0
-        );
-        this.teletransporte.setOrigin(0.5, 0.5);
-        this.teletransporte.setScale(4, 4);
-        this.teletransporte.anims.timeScale = 0.3;
-        this.teletransporte.play({ key: "tp_Animacion_defecto", repeat: -1 });
-
-        // Jugador
-        if (this.jugador) {
-            this.jugador.destroy(); // Destroy existing player sprite if switching characters
-        }
-        await this.generarAnimacion(this.nombreTexturaJugador);
-        this.jugador = this.add.sprite(
-            width / 3.5,
-            height / 1.3,
-            this.nombreTexturaJugador,
-            0
-        );
-        this.jugador.setOrigin(0.5, 0.5);
-        this.jugador.setScale(4, 4);
-
-        this.animacionesCargadas = true;
-
-        // Animaciones del jugador, animaciones intercaladas para mayor fluidéz
-        this.jugador.on(
-            "animationcomplete",
-            (anim: Phaser.Animations.Animation) => {
-                if (anim.key === `${this.nombreTexturaJugador}_TC_izq`) {
-                    this.jugador.play({
-                        key: `${this.nombreTexturaJugador}_Cam_izq`,
-                        repeat: -1,
-                    });
-                } else if (
-                    anim.key === `${this.nombreTexturaJugador}_TC_derch`
-                ) {
-                    this.jugador.play({
-                        key: `${this.nombreTexturaJugador}_Cam_derch`,
-                        repeat: -1,
-                    });
-                }
-            }
-        );
-
-        this.cursor = this.input.keyboard!.createCursorKeys();
-        this.teclaA = this.input.keyboard!.addKey("A");
-        this.teclaD = this.input.keyboard!.addKey("D");
-        this.teclaE = this.input.keyboard!.addKey("E");
-
-        // Cámara
-        this.cameras.main.startFollow(this.jugador);
-        this.cameras.main.setBounds(
-            0,
-            0,
-            this.suelo.width * this.suelo.scaleX,
-            600
-        ); // límites de la cámara si tu fondo es más grande que el canvas
-
-        // ----------------------------------------------------------
-        // Lista de objetos interactuables
-        this.objetosInteractuables = [
-            {
-                nombre: "teletransporte",
-                sprite: this.teletransporte,
-                distanciaMaxima: 250,
-            },
-            {
-                nombre: "casa",
-                sprite: casaPrincipal,
-                distanciaMaxima: 400,
-            },
-        ];
-
-        // ----------------------------------------------------------
-
-        // Texto del boton para interactuar
-        const textoInteractuar = this.add
-            .text(0, 0, "E", {
-                fontFamily: "MiFuente",
-                fontSize: "50px",
-                color: "#000000",
-            })
-            .setOrigin(0.5);
-
-        // Obtener tamaño del texto
-        const bounds = textoInteractuar.getBounds();
-        const padding = 12;
-        const borderRadius = 15;
-
-        // Crear fondo con coordenadas relativas al texto (centrado en 0,0)
-        const bg = this.add.graphics();
-        bg.fillStyle(0xffffff, 0.7);
-        bg.fillRoundedRect(
-            -bounds.width / 2 - padding,
-            -bounds.height / 2 - padding,
-            bounds.width + padding * 2,
-            bounds.height + padding * 2,
-            borderRadius
-        );
-
-        // Crear contenedor en pantalla
-        this.contenedorTexto = this.add.container(width / 2, height / 2, [
-            bg,
-            textoInteractuar,
-        ]);
-        this.contenedorTexto.setSize(
-            bounds.width + padding * 2,
-            bounds.height + padding * 2
-        );
-        this.contenedorTexto.setVisible(false);
+        this.crearEscenario(width, height);
+        await this.crearJugador(width, height);
+        this.configurarCamaraTeclas();
+        this.configurarTextoInteracción(width, height);
 
         // Eventos
         this.events.on("permitir-movimiento", () => {
             this.puedeMoverse = true;
+            this.puedeInteractuar = true;
         });
     }
 
@@ -366,12 +238,157 @@ export default class PuebloEscena extends Phaser.Scene {
             }
         }
 
-        // this.ultimaPosicionJugador = this.jugador.x;
-
         // // Si el jugador se ha movido calcula las distancias
-        // if (this.ultimaPosicionJugador != this.jugador.x) {
         this.mostrarTextoInteraccion();
-        // }
+    }
+
+    private crearEscenario(width: number, height: number) {
+        // Fondo
+        this.fondo = this.add.sprite(0, 0, "fondo");
+        this.fondo.setOrigin(0, 0);
+        this.fondo.setDisplaySize(width, height);
+        this.fondo.setScrollFactor(0);
+
+        // Mapa
+        this.suelo = this.add.sprite(0, height / 2.7, "suelo");
+        this.suelo.setOrigin(0, 0);
+        this.suelo.setScale(4, 4);
+
+        let casaHerrero = this.add.sprite(
+            (this.suelo.scaleX * this.suelo.width) / 1.57,
+            height / 3.8,
+            "casaHerrero"
+        );
+        casaHerrero.setOrigin(0, 0);
+        casaHerrero.setScale(4, 4);
+
+        this.casaPrincipal = this.add.sprite(
+            (this.suelo.scaleX * this.suelo.width) / 4,
+            height / 1.66,
+            "casaPrincipal"
+        );
+        this.casaPrincipal.setOrigin(0.5, 0.5);
+        this.casaPrincipal.setScale(4, 4);
+
+        this.generarAnimacion("tp");
+        this.teletransporte = this.add.sprite(
+            (this.suelo.scaleX * this.suelo.width) / 1.15,
+            height / 1.47,
+            "tp",
+            0
+        );
+        this.teletransporte.setOrigin(0.5, 0.5);
+        this.teletransporte.setScale(4, 4);
+        this.teletransporte.anims.timeScale = 0.3;
+        this.teletransporte.play({ key: "tp_Animacion_defecto", repeat: -1 });
+    }
+
+    private async crearJugador(width: number, height: number) {
+        // Jugador
+        if (this.jugador) {
+            this.jugador.destroy();
+        }
+        await this.generarAnimacion(this.nombreTexturaJugador);
+        this.jugador = this.add.sprite(
+            width / 3.5,
+            height / 1.3,
+            this.nombreTexturaJugador,
+            0
+        );
+        this.jugador.setOrigin(0.5, 0.5);
+        this.jugador.setScale(4, 4);
+
+        this.animacionesCargadas = true;
+
+        // Animaciones del jugador, animaciones intercaladas para mayor fluidéz
+        this.jugador.on(
+            "animationcomplete",
+            (anim: Phaser.Animations.Animation) => {
+                if (anim.key === `${this.nombreTexturaJugador}_TC_izq`) {
+                    this.jugador.play({
+                        key: `${this.nombreTexturaJugador}_Cam_izq`,
+                        repeat: -1,
+                    });
+                } else if (
+                    anim.key === `${this.nombreTexturaJugador}_TC_derch`
+                ) {
+                    this.jugador.play({
+                        key: `${this.nombreTexturaJugador}_Cam_derch`,
+                        repeat: -1,
+                    });
+                }
+            }
+        );
+    }
+
+    private configurarCamaraTeclas() {
+        this.cursor = this.input.keyboard!.createCursorKeys();
+        this.teclaA = this.input.keyboard!.addKey("A");
+        this.teclaD = this.input.keyboard!.addKey("D");
+        this.teclaE = this.input.keyboard!.addKey("E");
+
+        // Cámara
+        this.cameras.main.startFollow(this.jugador);
+        this.cameras.main.setBounds(
+            0,
+            0,
+            this.suelo.width * this.suelo.scaleX,
+            600
+        ); // límites de la cámara
+    }
+
+    private configurarTextoInteracción(width: number, height: number) {
+        // Lista de objetos interactuables
+        this.objetosInteractuables = [
+            {
+                nombre: "teletransporte",
+                sprite: this.teletransporte,
+                distanciaMaxima: 250,
+            },
+            {
+                nombre: "casa",
+                sprite: this.casaPrincipal,
+                distanciaMaxima: 400,
+            },
+        ];
+
+        // ----------------------------------------------------------
+
+        // Texto del boton para interactuar
+        const textoInteractuar = this.add
+            .text(0, 0, "E", {
+                fontFamily: "MiFuente",
+                fontSize: "50px",
+                color: "#000000",
+            })
+            .setOrigin(0.5);
+
+        // Obtener tamaño del texto
+        const bounds = textoInteractuar.getBounds();
+        const padding = 12;
+        const borderRadius = 15;
+
+        // Crear fondo con coordenadas relativas al texto (centrado en 0,0)
+        const bg = this.add.graphics();
+        bg.fillStyle(0xffffff, 0.7);
+        bg.fillRoundedRect(
+            -bounds.width / 2 - padding,
+            -bounds.height / 2 - padding,
+            bounds.width + padding * 2,
+            bounds.height + padding * 2,
+            borderRadius
+        );
+
+        // Crear contenedor en pantalla
+        this.contenedorTexto = this.add.container(width / 2, height / 2, [
+            bg,
+            textoInteractuar,
+        ]);
+        this.contenedorTexto.setSize(
+            bounds.width + padding * 2,
+            bounds.height + padding * 2
+        );
+        this.contenedorTexto.setVisible(false);
     }
 
     mostrarTextoInteraccion() {
@@ -397,7 +414,7 @@ export default class PuebloEscena extends Phaser.Scene {
             );
 
             //TODO mejorar la lógica
-            if (this.teclaE.isDown) {
+            if (this.teclaE.isDown && this.puedeInteractuar) {
                 this.jugador.anims.timeScale = 0.3;
                 // Ejecuta la animación
                 if (this.mirarDerecha) {
@@ -417,6 +434,7 @@ export default class PuebloEscena extends Phaser.Scene {
                 } else if (objetoCercano.nombre == "casa") {
                     this.mostraraPanelSeleccionPersonaje();
                 }
+                this.puedeInteractuar = false;
             }
         } else {
             this.contenedorTexto.setVisible(false);
@@ -497,5 +515,23 @@ export default class PuebloEscena extends Phaser.Scene {
         this.puedeMoverse = false;
     }
 
-    destroy() {}
+    destroy() {
+        // Destruir sprites
+        this.jugador?.destroy();
+        this.teletransporte?.destroy();
+        this.casaPrincipal?.destroy();
+        this.suelo?.destroy();
+        this.fondo?.destroy();
+
+        // Destruir contenedores
+        this.contenedorTexto?.destroy();
+
+        // Limpiar objetos interactuables
+        this.objetosInteractuables.forEach((obj) => obj.sprite?.destroy());
+        // Detener el seguimiento de la cámara
+        this.cameras.main.stopFollow();
+
+        // Limpiar referencias
+        this.objetosInteractuables = [];
+    }
 }
