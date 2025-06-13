@@ -24,6 +24,7 @@
         "build-nolog": "vite build --config vite/config.prod.mjs"
     },
     "dependencies": {
+        "bootstrap": "^5.3.6",
         "cloudinary": "^2.6.0",
         "firebase": "^11.6.1",
         "phaser": "^3.87.0",

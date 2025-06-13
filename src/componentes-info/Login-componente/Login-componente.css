@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap");
+
 
 /* Contenedor principal */
 #componeteLogin {
@@ -7,18 +7,6 @@
 
     font-family: "Nunito Sans", sans-serif;
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* Contenedor para la transición */
-.contenedorTransicion {
-    position: relative;
-    width: 400px;
-    /* Ancho fijo para evitar cambios de tamaño */
-    min-height: 400px;
-    /* Altura mínima para consistencia */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -36,29 +24,10 @@
 }
 
 /* Estilo de los contenedores de los formularios */
-#login,
-#registro {
-    width: fit-content;
-    padding: 40px;
-    background-color: white;
-    z-index: 100;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-}
-
 .contenedorForm {
-    width: 100%;
+    background-color: #f5f5f5;
 
-    padding: 20px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    border: 1px solid black;
+    box-shadow: 0 6px 10px #0000001a;
     border-radius: 10px;
 }
 
@@ -75,34 +44,9 @@ form {
 
     display: flex;
     justify-content: space-between;
+    align-items: center;
 
     margin: 10px;
-}
-
-#seccionRegistro {
-    flex: 1;
-    margin-top: 10%;
-
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-}
-
-.enviarFormBTN {
-    cursor: pointer;
-
-    width: 50%;
-    margin-top: 5%;
-
-    background-color: #71dd71;
-    border: #71dd71;
-
-    border-radius: 5px;
-}
-
-.enviarFormBTN:hover {
-    background-color: #7ff07f;
-    border: #7ff07f;
 }
 
 input {
@@ -110,6 +54,26 @@ input {
 }
 
 /* Estilos botones */
+/* Botón general para el enviar el formulario */
+.enviarFormBTN {
+    cursor: pointer;
+
+    width: 50%;
+    height: 2em;
+    margin-top: 5%;
+
+    background-color: #6ee86e;
+    color: #fff;
+
+    border-radius: 5px;
+    border: none;
+}
+
+.enviarFormBTN:hover {
+    background-color: #80f180;
+}
+
+/* Botones para navegar entre formularios */
 button.registro {
     cursor: pointer;
 
@@ -142,46 +106,3 @@ button.cancelar:hover {
     border: #ac694e;
 }
 
-/* Modal */
-
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-}
-
-.modal-content {
-    background-color: #fff;
-    border-radius: 10px;
-    padding: 20px;
-    position: relative;
-    width: 400px;
-    min-height: 400px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.close-btn {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #333;
-    z-index: 1000;
-}
-
-.close-btn:hover {
-    color: #ff4d4d;
-}

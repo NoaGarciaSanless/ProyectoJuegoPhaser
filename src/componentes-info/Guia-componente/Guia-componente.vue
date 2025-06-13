@@ -64,7 +64,6 @@ async function cargarDatos() {
 
 // Filtra por nombre y tipo
 async function filtrar() {
-
     cerrarDetalles();
 
     // Oculta la lista (principalmente para que se reinicie)
@@ -134,25 +133,31 @@ onMounted(() => {
 </script>
 
 <template>
-    <div id="componenteGuia">
-        <h2>Guia</h2>
+    <div
+        id="componenteGuia"
+        class="p-2 d-flex flex-column justify-content-center align-items-center gap-2"
+    >
+        <h2 class="fs-1">Guia</h2>
 
         <p class="info">
             Aqui podrás consultar los personajes, los enemigos, mejoras y
             objetos.
         </p>
 
-        <form id="filtro">
-            <h3>Filtro</h3>
+        <form
+            id="filtro"
+            class="p-2 border-bottom border-secondary border-1 d-flex flex-wrap justify-content-center align-items-center gap-3"
+        >
+            <h3 class="pe-2 border-end border-secondary">Filtro</h3>
 
             <div class="campo">
-                <label for="nombre">Nombre: </label>
-                <input type="text" id="nombre" v-model="nombre" />
+                <label for="nombre" class="form-label">Nombre: </label>
+                <input type="text" id="nombre" class="form-control" v-model="nombre" />
             </div>
 
             <div class="campo">
-                <label for="tipo">Tipo: </label>
-                <select id="tipo" v-model="tipo">
+                <label for="tipo" class="form-label">Tipo: </label>
+                <select id="tipo" class="form-select" v-model="tipo">
                     <option value="" disabled>--Selección de tipo--</option>
                     <option value="personajes">Personajes</option>
                     <option value="enemigos">Enemigos</option>
@@ -163,10 +168,10 @@ onMounted(() => {
             </div>
 
             <div class="botones">
-                <button id="buscarFGBTN" @click.prevent="filtrar">
+                <button class="btn btn-primary" @click.prevent="filtrar">
                     Buscar
                 </button>
-                <button id="limpiarFGBTN" @click.prevent="limpiarFiltros">
+                <button  class="btn btn-light" @click.prevent="limpiarFiltros">
                     Limpiar
                 </button>
             </div>
@@ -175,17 +180,30 @@ onMounted(() => {
         <div class="contenido">
             <div class="contenedorLista" v-if="mostrarLista">
                 <div id="lista">
-                    <TarjetaDato class="elemento" v-for="(dato) in listaPaginada" :key="`tarjeta-${dato.nombre}`"
-                        :dato="dato" @mostrar-detalles="configurarElementoDetalles">
+                    <TarjetaDato
+                        class="elemento"
+                        v-for="dato in listaPaginada"
+                        :key="`tarjeta-${dato.nombre}`"
+                        :dato="dato"
+                        @mostrar-detalles="configurarElementoDetalles"
+                    >
                     </TarjetaDato>
                 </div>
 
                 <div class="paginacion">
-                    <button class="paginacionBTN" @click="paginaActual--" :disabled="paginaActual <= 1">
+                    <button
+                        class="paginacionBTN"
+                        @click="paginaActual--"
+                        :disabled="paginaActual <= 1"
+                    >
                         &#9664;
                     </button>
                     <span>Página {{ paginaActual }} de {{ totalPaginas }}</span>
-                    <button class="paginacionBTN" @click="paginaActual++" :disabled="paginaActual >= totalPaginas">
+                    <button
+                        class="paginacionBTN"
+                        @click="paginaActual++"
+                        :disabled="paginaActual >= totalPaginas"
+                    >
                         &#9654;
                     </button>
                 </div>
@@ -194,7 +212,9 @@ onMounted(() => {
             <div class="relleno" v-if="mostrarDetalles"></div>
 
             <div id="detalles" v-if="mostrarDetalles">
-                <span id="cerrarDetallesBTN" @click="cerrarDetalles">&times;</span>
+                <span id="cerrarDetallesBTN" @click="cerrarDetalles"
+                    >&times;</span
+                >
                 <div id="informacionElemento" v-if="elementoDetalles">
                     <h3>{{ elementoDetalles.nombre }}</h3>
 
@@ -203,64 +223,68 @@ onMounted(() => {
                         <p>{{ elementoDetalles.descripcion }}</p>
                     </div>
 
-                    <div class="apartado" v-if="comprobarElementoEstadisticas()">
+                    <div
+                        class="apartado"
+                        v-if="comprobarElementoEstadisticas()"
+                    >
                         <h4>Estadísticas</h4>
                         <div class="listaEstadisticasPersonaje">
                             <div class="estadistica">
                                 <span class="nomEst">Ataque base </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.ataqueBase
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Ataque por nivel </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.ataquePorNivel
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Defensa base </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.defensaBase
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Defensa por nivel </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.defensaPorNivel
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Ataque mágico base </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.ataqueMagicoBase
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <div class="estadistica">
-                                <span class="nomEst">Ataque mágico por nivel
+                                <span class="nomEst"
+                                    >Ataque mágico por nivel
                                 </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.ataqueMagicoPorNivel
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Precisión base:</span>
                                 <span class="valorEst">{{
                                     elementoDetalles.precisionBase
-                                    }}</span>
+                                }}</span>
                             </div>
 
                             <div class="estadistica">
                                 <span class="nomEst">Crítico base </span>
                                 <span class="valorEst">{{
                                     elementoDetalles.criticoBase
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </div>

@@ -1,63 +1,21 @@
-@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Pixelify+Sans:wght@400..700&display=swap");
-
 /* Contenedor principal */
 #componenteGuia {
     font-family: "Nunito Sans", sans-serif;
     color: #333;
 
-    width: 100%;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    padding: 20px;
-
     box-sizing: border-box;
 }
 
 #componenteGuia h2 {
-    font-size: 2rem;
     color: #222;
-
-    margin-bottom: 10px;
 }
 
 .info {
-    font-size: 1rem;
     color: #555;
     text-align: center;
-
-    margin-bottom: 20px;
-
-    max-width: 80%;
 }
 
 /* Formulario */
-#filtro {
-    width: 100%;
-    max-width: 800px;
-
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    align-items: center;
-
-    padding: 15px 0;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #ccc;
-}
-
-#filtro h3 {
-    font-size: 1.25rem;
-
-    padding-right: 15px;
-
-    border-right: 2px solid #ccc;
-
-    margin: 0;
-}
 
 #filtro .campo {
     display: flex;
@@ -65,29 +23,15 @@
     gap: 10px;
 }
 
-#filtro label {
-    font-size: 1rem;
-    color: #333;
-}
 
 #filtro input,
 #filtro select {
-    font-size: 1rem;
     font-family: "Nunito Sans", sans-serif;
-
-    padding: 8px;
 
     border: 1px solid #ccc;
     border-radius: 4px;
-
-    transition: border-color 0.2s ease;
 }
 
-#filtro input:focus,
-#filtro select:focus {
-    border-color: #007bff;
-    outline: none;
-}
 
 #filtro .botones {
     margin-left: auto;
@@ -100,42 +44,6 @@
     gap: 5px;
 }
 
-#filtro #buscarFGBTN {
-    color: #fff;
-    font-size: 1rem;
-
-    padding: 8px 16px;
-
-    background-color: #007bff;
-
-    border: none;
-    border-radius: 4px;
-
-    cursor: pointer;
-
-    transition: background-color 0.2s ease;
-}
-
-#filtro #buscarFGBTN:hover {
-    background-color: #0056b3;
-}
-
-#filtro #limpiarFGBTN {
-    font-size: 1rem;
-
-    padding: 8px 16px;
-
-    border: none;
-    border-radius: 4px;
-
-    cursor: pointer;
-
-    transition: background-color 0.2s ease;
-}
-
-#filtro #limpiarFGBTN:hover {
-    background-color: #c0c0c0;
-}
 
 /* Contenido */
 .contenido {
@@ -375,7 +283,6 @@
         padding: 10px 0;
 
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-
     }
 
     .listaEstadisticasPersonaje {
@@ -385,7 +292,6 @@
 
 /* Media query para pantallas muy pequeñas (<480px) */
 @media (max-width: 480px) {
-
     #filtro input,
     #filtro select {
         width: 100%;

@@ -333,6 +333,7 @@ export default class BatallaHUD extends Phaser.Scene {
             .on("pointerdown", () => {
                 this.alternarInventario();
                 this.invBTN.setFrame(4);
+                this.events.emit("permitir_interaccion");
             })
             .on("pointerover", () => backBTN.setTint(0xcccccc))
             .on("pointerout", () => backBTN.clearTint());
@@ -611,8 +612,8 @@ export default class BatallaHUD extends Phaser.Scene {
         nivelPersonaje: number
     ) {
         let contenedorTexto = this.add.container(posX, posY - posY * 0.2);
-        const bgWidth = 130;
-        const bgHeight = 30;
+        const bgWidth = 200;
+        const bgHeight = 50;
 
         const bg = this.add
             .graphics()
@@ -620,12 +621,12 @@ export default class BatallaHUD extends Phaser.Scene {
             .fillRect(-bgWidth / 2, 20, bgWidth, bgHeight);
 
         let texto = this.rexUI.add.BBCodeText(
-            -bgWidth * 0.25,
-            bgHeight * 0.8,
+            -bgWidth * 0.38,
+            bgHeight * 0.55,
             `Nivel [color=yellow]${nivelPersonaje}[/color]`,
             {
                 fontFamily: "MiFuente",
-                fontSize: "16px",
+                fontSize: "30px",
                 color: "#ffffff",
             }
         );
@@ -757,7 +758,8 @@ export default class BatallaHUD extends Phaser.Scene {
         this.contenedorTexto?.removeAll(true);
         this.contenedorInfoFinBatalla?.removeAll(true);
         this.contenedorInfoFinBatalla?.removeAll(true);
-        this.inventario?.destroy();
+        
+
         // Eliminar barras de vida
         Object.values(this.barrasVida).forEach((barra) => barra?.destroy());
         this.barrasVida = {};
@@ -767,3 +769,4 @@ export default class BatallaHUD extends Phaser.Scene {
         this.invBTN?.destroy();
     }
 }
+
