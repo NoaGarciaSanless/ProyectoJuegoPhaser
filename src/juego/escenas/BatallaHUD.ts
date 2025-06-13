@@ -611,27 +611,32 @@ export default class BatallaHUD extends Phaser.Scene {
         posY: number,
         nivelPersonaje: number
     ) {
-        let contenedorTexto = this.add.container(posX, posY - posY * 0.2);
-        const bgWidth = 200;
-        const bgHeight = 50;
+        let texto = this.rexUI.add
+            .BBCodeText(
+                posX,
+                posY - posY * 0.2,
+                `Nivel [color=yellow]${nivelPersonaje}[/color]`,
+                {
+                    fontFamily: "MiFuente",
+                    fontSize: "30px",
+                    color: "#ffffff",
+                }
+            )
+            .setOrigin(0.5, 0.5);
 
-        const bg = this.add
-            .graphics()
-            .fillStyle(0x000000, 0.4)
-            .fillRect(-bgWidth / 2, 20, bgWidth, bgHeight);
+        const bounds = texto.getBounds();
+        const padding = 12;
+        const borderRadius = 15;
 
-        let texto = this.rexUI.add.BBCodeText(
-            -bgWidth * 0.38,
-            bgHeight * 0.55,
-            `Nivel [color=yellow]${nivelPersonaje}[/color]`,
-            {
-                fontFamily: "MiFuente",
-                fontSize: "30px",
-                color: "#ffffff",
-            }
+        const bg = this.add.graphics();
+        bg.fillStyle(0x000000, 0.3);
+        bg.fillRoundedRect(
+            bounds.x - padding,
+            bounds.y - padding,
+            bounds.width + padding * 2,
+            bounds.height + padding * 2,
+            borderRadius
         );
-
-        contenedorTexto.add([bg, texto]);
     }
 
     private alternarInventario() {
@@ -758,7 +763,6 @@ export default class BatallaHUD extends Phaser.Scene {
         this.contenedorTexto?.removeAll(true);
         this.contenedorInfoFinBatalla?.removeAll(true);
         this.contenedorInfoFinBatalla?.removeAll(true);
-        
 
         // Eliminar barras de vida
         Object.values(this.barrasVida).forEach((barra) => barra?.destroy());
@@ -769,4 +773,3 @@ export default class BatallaHUD extends Phaser.Scene {
         this.invBTN?.destroy();
     }
 }
-
