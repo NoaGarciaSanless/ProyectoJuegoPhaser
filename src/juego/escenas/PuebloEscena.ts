@@ -1,12 +1,14 @@
 import { GameObjects } from "phaser";
+import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
+
 import { Assets } from "../../compartido/Assets";
 import { IObjetoInteractuable } from "../../Interfaces/IObjetoInteractuable";
-import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
 import {
     ElementoListaPersonajesDTO,
     PersonajeDTO,
 } from "../../DTOs/PersonajeDTO";
 import PuebloHUD from "./PuebloHUD";
+import { inputState, interactuar } from "../Modulos/modulo_movimiento";
 
 export default class PuebloEscena extends Phaser.Scene {
     rexUI: RexUIPlugin;
@@ -166,12 +168,18 @@ export default class PuebloEscena extends Phaser.Scene {
         // Ajusta la velocidad del jugador
         const velocidad = 6;
 
+        // Inputs del teclado
+        inputState.teclado.izquierda =
+            this.cursor.left.isDown || this.teclaA.isDown;
+        inputState.teclado.derecha =
+            this.cursor.right.isDown || this.teclaD.isDown;
+
         if (this.puedeMoverse) {
             let anchoSuelo = this.suelo.width * this.suelo.scaleX;
             let animacionActual = this.jugador.anims.currentAnim?.key;
 
             // Establece una animación
-            if (this.cursor.left.isDown || this.teclaA.isDown) {
+            if (inputState.teclado.izquierda || inputState.hud.izquierda) {
                 this.jugador.x -= velocidad;
 
                 // Ejecuta la animación
@@ -187,7 +195,7 @@ export default class PuebloEscena extends Phaser.Scene {
                 }
 
                 this.mirarDerecha = false;
-            } else if (this.cursor.right.isDown || this.teclaD.isDown) {
+            } else if (inputState.teclado.derecha || inputState.hud.derecha) {
                 this.jugador.x += velocidad;
 
                 // Ejecuta la animación
@@ -413,28 +421,35 @@ export default class PuebloEscena extends Phaser.Scene {
                 this.jugador.y - 130
             );
 
-            //TODO mejorar la lógica
-            if (this.teclaE.isDown && this.puedeInteractuar) {
-                this.jugador.anims.timeScale = 0.3;
-                // Ejecuta la animación
-                if (this.mirarDerecha) {
-                    this.jugador.play({
-                        key: `${this.nombreTexturaJugador}_Idle_derch`,
-                        repeat: -1,
-                    });
-                } else {
-                    this.jugador.play({
-                        key: `${this.nombreTexturaJugador}_Idle_izq`,
-                        repeat: -1,
-                    });
-                }
+            interactuar.teclado.interaccion_e = this.teclaE.isDown;
 
-                if (objetoCercano.nombre == "teletransporte") {
-                    this.tp_siguienteNivel();
-                } else if (objetoCercano.nombre == "casa") {
-                    this.mostraraPanelSeleccionPersonaje();
+            //TODO mejorar la lógica
+            if (this.puedeInteractuar) {
+                if (
+                    interactuar.teclado.interaccion_e ||
+                    interactuar.hud.interaccion_e
+                ) {
+                    this.jugador.anims.timeScale = 0.3;
+                    // Ejecuta la animación
+                    if (this.mirarDerecha) {
+                        this.jugador.play({
+                            key: `${this.nombreTexturaJugador}_Idle_derch`,
+                            repeat: -1,
+                        });
+                    } else {
+                        this.jugador.play({
+                            key: `${this.nombreTexturaJugador}_Idle_izq`,
+                            repeat: -1,
+                        });
+                    }
+
+                    if (objetoCercano.nombre == "teletransporte") {
+                        this.tp_siguienteNivel();
+                    } else if (objetoCercano.nombre == "casa") {
+                        this.mostraraPanelSeleccionPersonaje();
+                    }
+                    this.puedeInteractuar = false;
                 }
-                this.puedeInteractuar = false;
             }
         } else {
             this.contenedorTexto.setVisible(false);

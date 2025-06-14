@@ -1,5 +1,6 @@
 import { Assets } from "../../compartido/Assets";
 import RexUIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin.js";
+import { GameObjects } from "phaser";
 
 import {
     ElementoListaPersonajesDTO,
@@ -8,6 +9,7 @@ import {
 
 import { seleccionarPersonaje } from "../../Servicios/DatosAssetsServicio";
 import PuebloEscena from "./PuebloEscena";
+import { inputState, interactuar } from "../Modulos/modulo_movimiento";
 
 export default class PuebloHUD extends Phaser.Scene {
     rexUI: RexUIPlugin;
@@ -19,6 +21,10 @@ export default class PuebloHUD extends Phaser.Scene {
     todosPersonajesUsuario: PersonajeDTO[] = [];
 
     menuSeleccionPersonajes: any;
+
+    boton_izq: GameObjects.Sprite;
+    boton_derch: GameObjects.Sprite;
+    boton_interaccion: GameObjects.Sprite;
 
     constructor() {
         super({ key: "PuebloHUD", active: false, visible: true });
@@ -33,6 +39,10 @@ export default class PuebloHUD extends Phaser.Scene {
         this.listaPersonajes = data.listaPersonajes;
         this.personajeSeleccionado = data.personajeSeleccionado;
         this.todosPersonajesUsuario = data.todosPersonajesUsuario;
+
+        interactuar.hud.interaccion_e = false;
+        inputState.hud.izquierda = false;
+        inputState.hud.derecha = false;
     }
 
     preload() {
@@ -45,6 +55,11 @@ export default class PuebloHUD extends Phaser.Scene {
             Assets.seleccionarBTN_sprite,
             Assets.seleccionarBTN_json
         );
+        this.load.aseprite(
+            "botones_pueblo",
+            Assets.botones_pueblo_sprite,
+            Assets.botones_pueblo_json
+        );
 
         // Agrega un manejador para errores de carga
         this.load.on("loaderror", (file: Phaser.Loader.File) => {
@@ -54,6 +69,8 @@ export default class PuebloHUD extends Phaser.Scene {
 
     create() {
         this.puebloEscena = this.scene.get("PuebloEscena") as PuebloEscena;
+
+        this.crearBotonesPueblo(this.scale.width, this.scale.height);
 
         this.menuSeleccionPersonajes = this.generarPanelSeleccionPersonaje();
         // this.add.existing(this.menuSeleccionPersonajes);
@@ -65,6 +82,56 @@ export default class PuebloHUD extends Phaser.Scene {
 
         this.events.on("mostrar-panel", () => {
             this.menuSeleccionPersonajes.setVisible(true);
+        });
+    }
+
+    crearBotonesPueblo(width: number, height: number) {
+        this.boton_izq = this.add
+            .sprite(width * 0.1, height * 0.9, "botones_pueblo", 0)
+            .setOrigin(0.5, 0.5)
+            .setScale(3, 3)
+            .setAlpha(0.6)
+            .setInteractive();
+
+        this.boton_izq.on("pointerdown", () => {
+            inputState.hud.izquierda = true;
+            this.boton_izq.setAlpha(0.8).setTint(0xa3ea4f);
+        });
+        this.boton_izq.on("pointerup", () => {
+            inputState.hud.izquierda = false;
+            this.boton_izq.setAlpha(0.6).clearTint();
+        });
+
+        this.boton_derch = this.add
+            .sprite(width * 0.2, height * 0.9, "botones_pueblo", 1)
+            .setOrigin(0.5, 0.5)
+            .setScale(3, 3)
+            .setAlpha(0.6)
+            .setInteractive();
+
+        this.boton_derch.on("pointerdown", () => {
+            inputState.hud.derecha = true;
+            this.boton_derch.setAlpha(0.8).setTint(0xa3ea4f);
+        });
+        this.boton_derch.on("pointerup", () => {
+            inputState.hud.derecha = false;
+            this.boton_derch.setAlpha(0.6).clearTint();
+        });
+
+        this.boton_interaccion = this.add
+            .sprite(width * 0.9, height * 0.9, "botones_pueblo", 2)
+            .setOrigin(0.5, 0.5)
+            .setScale(3, 3)
+            .setAlpha(0.6)
+            .setInteractive();
+
+        this.boton_interaccion.on("pointerdown", () => {
+            interactuar.hud.interaccion_e = true;
+            this.boton_interaccion.setAlpha(0.8).setTint(0xa3ea4f);
+        });
+        this.boton_interaccion.on("pointerup", () => {
+            interactuar.hud.interaccion_e = false;
+            this.boton_interaccion.setAlpha(0.6).clearTint();
         });
     }
 

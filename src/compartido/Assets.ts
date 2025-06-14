@@ -25,6 +25,11 @@ export class Assets {
     public static readonly puebloBTN_sprite =
         "https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1749576043/btn_pueblo_wwdzx3.png";
 
+    public static readonly botones_pueblo_sprite =
+        "https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1749912267/flechas_movimieto_udnadf.png";
+    public static readonly botones_pueblo_json =
+        "https://res.cloudinary.com/juegoporturnosdaw-img/raw/upload/v1749912278/flechas_movimieto_m7dvp1.json";
+
     // Recursos -------------------
     public static readonly iconos_elementos_ui_sprite =
         "https://res.cloudinary.com/juegoporturnosdaw-img/image/upload/v1749404002/iconosUI_phaser_kl9lud.png";
