@@ -3,6 +3,9 @@ export class EnemigoDTO {
     public nombre: string;
     public descripcion: string;
 
+    public vidaBase: number;
+    public vidaPorNivel: number;
+
     public ataqueBase: number;
     public ataquePorNivel: number;
 
@@ -29,6 +32,8 @@ export class EnemigoDTO {
         id?: string,
         nombre?: string,
         descripcion?: string,
+        vidaBase?: number,
+        vidaPorNivel?: number,
         ataqueBase?: number,
         ataquePorNivel?: number,
         defensaBase?: number,
@@ -47,6 +52,9 @@ export class EnemigoDTO {
         this.id = id || "";
         this.nombre = nombre || "";
         this.descripcion = descripcion || "";
+
+        this.vidaBase = vidaBase || 0;
+        this.vidaPorNivel = vidaPorNivel || 0;
 
         this.ataqueBase = ataqueBase || 0;
         this.ataquePorNivel = ataquePorNivel || 0;
@@ -76,6 +84,9 @@ export class EnemigoDTO {
             id: this.id,
             nombre: this.nombre,
             descripcion: this.descripcion,
+
+            vidaBase: this.vidaBase,
+            vidaPorNivel: this.vidaPorNivel,
 
             ataqueBase: this.ataqueBase,
             ataquePorNivel: this.ataquePorNivel,

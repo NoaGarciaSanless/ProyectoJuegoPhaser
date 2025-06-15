@@ -386,14 +386,14 @@ export default class BatallaHUD extends Phaser.Scene {
         );
         this.events.on(
             "crear_barra_vida",
-            (posX: number, posY: number, health: number, key: string) => {
-                this.crearBarraVida(posX, posY, health, key);
+            (posX: number, posY: number, vida: number, key: string) => {
+                this.crearBarraVida(posX, posY, vida, key);
             }
         );
         this.events.on(
             "actualizar_barra_vida",
-            (quantity: number, key: string) => {
-                this.actualizarBarraVida(quantity, key);
+            (cantidad: number, vidaMax: number, key: string) => {
+                this.actualizarBarraVida(cantidad, vidaMax, key);
             }
         );
         this.events.on(
@@ -457,8 +457,8 @@ export default class BatallaHUD extends Phaser.Scene {
             return;
         }
 
-        const colorPersonaje = personaje === "player" ? "green" : "red";
-        const colorObjetivo = objetivo === "player" ? "green" : "red";
+        const colorPersonaje = personaje === "jugador" ? "green" : "red";
+        const colorObjetivo = objetivo === "jugador" ? "green" : "red";
         let textoMensaje = "";
 
         if (accion === "ataque") {
@@ -591,14 +591,18 @@ export default class BatallaHUD extends Phaser.Scene {
             .layout();
 
         this.add.existing(barra);
-        barra.setValue(vida, 0, 100);
+        barra.setValue(vida, 0, vida);
         this.barrasVida[key] = barra;
     }
 
-    private actualizarBarraVida(cantidad: number, key: string) {
+    private actualizarBarraVida(
+        cantidad: number,
+        vidaMax: number,
+        key: string
+    ) {
         const barra = this.barrasVida[key];
         if (barra) {
-            barra.setValue(cantidad, 0, 100);
+            barra.setValue(cantidad, 0, vidaMax);
             barra.text = `${cantidad}HP`;
             const slider = barra.getElement?.("slider");
             const indicador = slider?.getElement?.("indicator");
@@ -629,7 +633,7 @@ export default class BatallaHUD extends Phaser.Scene {
         const borderRadius = 15;
 
         const bg = this.add.graphics();
-        bg.fillStyle(0x000000, 0.3);
+        bg.fillStyle(0x000000, 0.2);
         bg.fillRoundedRect(
             bounds.x - padding,
             bounds.y - padding,
@@ -734,7 +738,7 @@ export default class BatallaHUD extends Phaser.Scene {
         ]);
 
         await actualizarEstadisticasPersonaje(
-            Number.parseInt(this.batallaEscena.personajeSeleccionado.id),
+            Number.parseInt(this.batallaEscena.personajeJugadorSeleccionado.id),
             exp
         );
     }
@@ -761,7 +765,6 @@ export default class BatallaHUD extends Phaser.Scene {
     destroy() {
         // Elimina los contenedores
         this.contenedorTexto?.removeAll(true);
-        this.contenedorInfoFinBatalla?.removeAll(true);
         this.contenedorInfoFinBatalla?.removeAll(true);
 
         // Eliminar barras de vida

@@ -67,7 +67,7 @@ export default class PuebloEscena extends Phaser.Scene {
     }) {
         this.listaPersonajes = data.listaPersonajes;
         this.personajeSeleccionado = data.personajeSeleccionado;
-        this.todosPersonajesUsuario = data.todosPersonajesUsuario;
+        this.todosPersonajesUsuario = data.todosPersonajesUsuario;        
 
         this.nombreTexturaJugador = `jugador_personaje_${this.personajeSeleccionado.id}`;
         this.animacionesCargadas = false;

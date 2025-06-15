@@ -2,7 +2,10 @@ import {
     ElementoListaPersonajesDTO,
     PersonajeDTO,
 } from "../../DTOs/PersonajeDTO";
-import { obtnerEnemigoAleatorio } from "../../Servicios/DatosAssetsServicio";
+import {
+    obtenerListaUsuarioActual,
+    obtnerEnemigoAleatorio,
+} from "../../Servicios/DatosAssetsServicio";
 
 export class CargaEscenaBatalla extends Phaser.Scene {
     constructor() {
@@ -13,18 +16,30 @@ export class CargaEscenaBatalla extends Phaser.Scene {
         personajeSeleccionado: PersonajeDTO;
         estadisticas: ElementoListaPersonajesDTO;
     }) {
-        // Obtiene los datos del enemigo
-        const datosEnemigo = await obtnerEnemigoAleatorio(
-            data.estadisticas.nivel
-        );
+        try {
+            // Obtener lista de personajes
+            const listaPersonajes = await obtenerListaUsuarioActual();
+            // Buscar el seleccionado y obtiene sus estadisticas
+            const estadisticasPersonaje = listaPersonajes.find(
+                (p: ElementoListaPersonajesDTO) => p.seleccionado
+            );
 
-        // Los pasa a la escena de la batalla
-        this.scene.start("EscenaBatalla", {
-            personajeSeleccionado: data.personajeSeleccionado,
-            estadisticas: data.estadisticas,
-            enemigo: datosEnemigo.enemigoSeleccionado,
-            nivelEnemigo: datosEnemigo.nivelEnemigo,
-        });
+            // Obtiene los datos del enemigo
+            const datosEnemigo = await obtnerEnemigoAleatorio(
+                data.estadisticas.nivel
+            );
+
+            // Los pasa a la escena de la batalla
+            this.scene.start("EscenaBatalla", {
+                personajeSeleccionado: data.personajeSeleccionado,
+                estadisticas: estadisticasPersonaje,
+                enemigo: datosEnemigo.enemigoSeleccionado,
+                nivelEnemigo: datosEnemigo.nivelEnemigo,
+            });
+        } catch (error) {
+            console.error("Error durante la carga:", error);
+            this.scene.start("InicioEscena");
+        }
     }
 
     preload() {

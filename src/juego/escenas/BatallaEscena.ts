@@ -24,8 +24,8 @@ export default class BatallaEscena extends Phaser.Scene {
     // Sprites usados en la escena
     fondo: GameObjects.Image;
     suelo: GameObjects.Image;
-    personaje: GameObjects.Sprite;
-    enemigo1: GameObjects.Sprite;
+    jugadorSprite: GameObjects.Sprite;
+    enemigoSprite: GameObjects.Sprite;
 
     // Otras escenas
     batallaHUD: BatallaHUD | undefined;
@@ -36,7 +36,7 @@ export default class BatallaEscena extends Phaser.Scene {
     turno: number = 1;
     resultado: string = "";
 
-    personajeSeleccionado: PersonajeDTO;
+    personajeJugadorSeleccionado: PersonajeDTO;
     estadisticasPersonaje: ElementoListaPersonajesDTO;
     nombreTexturaJugador: string;
 
@@ -45,7 +45,9 @@ export default class BatallaEscena extends Phaser.Scene {
     nombreTexturaEnemigo: string;
 
     vidaJugador: number = 100;
+    vidaMaxJugador: number = 100;
     vidaEnemigo: number = 100;
+    vidaMaxEnemigo: number = 100;
 
     private readonly inventarioBatallaJugadorMax: number = 10;
 
@@ -56,9 +58,16 @@ export default class BatallaEscena extends Phaser.Scene {
             cantidad: 2,
             efecto: () => {
                 if (this.inventario["pocion_pq"].cantidad > 0) {
-                    this.vidaJugador = Math.min(this.vidaJugador + 20, 100);
-                    this.actualizarBarraVida(this.vidaJugador, "player1");
-                    this.mostrarTextoTurnos(20, "player", "curar");
+                    this.vidaJugador = Math.min(
+                        this.vidaJugador + 20,
+                        this.vidaMaxJugador
+                    );
+                    this.actualizarBarraVida(
+                        this.vidaJugador,
+                        this.vidaMaxJugador,
+                        "jugador"
+                    );
+                    this.mostrarTextoTurnos(20, "jugador", "curar");
 
                     this.inventario["pocion_pq"].cantidad--;
 
@@ -80,9 +89,9 @@ export default class BatallaEscena extends Phaser.Scene {
         nivelEnemigo: number;
     }) {
         // Personaje
-        this.personajeSeleccionado = data.personajeSeleccionado;
+        this.personajeJugadorSeleccionado = data.personajeSeleccionado;
         this.estadisticasPersonaje = data.estadisticas;
-        this.nombreTexturaJugador = `jugador_personaje_${this.personajeSeleccionado.id}`;
+        this.nombreTexturaJugador = `jugador_personaje_${this.personajeJugadorSeleccionado.id}`;
 
         // Enemigo
         this.enemigo = data.enemigo;
@@ -90,8 +99,16 @@ export default class BatallaEscena extends Phaser.Scene {
         this.nombreTexturaEnemigo = `enemigo_${this.enemigo.id}`;
 
         // Variables de inicio de escena
-        this.vidaJugador = 100;
-        this.vidaEnemigo = 100;
+        this.vidaMaxJugador =
+            this.personajeJugadorSeleccionado.vidaBase +
+            this.personajeJugadorSeleccionado.vidaPorNivel *
+                this.estadisticasPersonaje.nivel;
+        this.vidaJugador = this.vidaMaxJugador;
+        this.vidaMaxEnemigo =
+            this.enemigo.vidaBase +
+            this.enemigo.vidaPorNivel * this.nivelEnemigo;
+        this.vidaEnemigo = this.vidaMaxEnemigo;
+
         this.turno = 1;
         this.estadoActual = EstadoBatalla.TurnoJugador;
         this.resultado = "";
@@ -120,8 +137,8 @@ export default class BatallaEscena extends Phaser.Scene {
 
         this.load.aseprite(
             this.nombreTexturaJugador,
-            this.personajeSeleccionado.spriteURL,
-            this.personajeSeleccionado.jsonURL
+            this.personajeJugadorSeleccionado.spriteURL,
+            this.personajeJugadorSeleccionado.jsonURL
         );
 
         this.load.aseprite(
@@ -193,57 +210,57 @@ export default class BatallaEscena extends Phaser.Scene {
         // Esqueleto
         this.generarAnimacion(this.nombreTexturaEnemigo);
 
-        this.enemigo1 = this.add
+        this.enemigoSprite = this.add
             .sprite(width / 1.5, height / 1.4, this.nombreTexturaEnemigo, 16)
             .setOrigin(0.5, 0.5)
             .setScale(4, 4);
 
         this.reproducirAnimacionIdle(
-            this.enemigo1,
+            this.enemigoSprite,
             this.nombreTexturaEnemigo,
             "Idle_izq",
             0.3
         );
         this.crearBarraVida(
-            this.enemigo1.x,
-            this.enemigo1.y,
-            this.vidaEnemigo,
-            "enemy1"
+            this.enemigoSprite.x,
+            this.enemigoSprite.y,
+            this.vidaMaxEnemigo,
+            "enemigo"
         );
         this.crearTextoNivel(
-            this.enemigo1.x,
-            this.enemigo1.y,
+            this.enemigoSprite.x,
+            this.enemigoSprite.y,
             this.nivelEnemigo
         );
 
         // Personaje
         this.generarAnimacion(this.nombreTexturaJugador);
 
-        this.personaje = this.add
+        this.jugadorSprite = this.add
             .sprite(width / 3.5, height / 1.4, this.nombreTexturaJugador, 0)
             .setOrigin(0.5, 0.5)
             .setScale(4, 4);
 
         this.reproducirAnimacionIdle(
-            this.personaje,
+            this.jugadorSprite,
             this.nombreTexturaJugador,
             "Idle_combate"
         );
         this.reproducirAnimacionIdle(
-            this.personaje,
+            this.jugadorSprite,
             this.nombreTexturaJugador,
             "Idle_combate",
             0.3
         );
         this.crearBarraVida(
-            this.personaje.x,
-            this.personaje.y,
-            this.vidaJugador,
-            "player1"
+            this.jugadorSprite.x,
+            this.jugadorSprite.y,
+            this.vidaMaxJugador,
+            "jugador"
         );
         this.crearTextoNivel(
-            this.personaje.x,
-            this.personaje.y,
+            this.jugadorSprite.x,
+            this.jugadorSprite.y,
             this.estadisticasPersonaje.nivel
         );
     }
@@ -357,8 +374,13 @@ export default class BatallaEscena extends Phaser.Scene {
     }
 
     // Actualiza la barra de vida
-    actualizarBarraVida(cantidad: number, key: string) {
-        this.batallaHUD?.events.emit("actualizar_barra_vida", cantidad, key);
+    actualizarBarraVida(cantidad: number, vidaMax: number, key: string) {
+        this.batallaHUD?.events.emit(
+            "actualizar_barra_vida",
+            cantidad,
+            vidaMax,
+            key
+        );
     }
 
     private crearTextoNivel(
@@ -464,8 +486,16 @@ export default class BatallaEscena extends Phaser.Scene {
                 break;
 
             case EstadoBatalla.FinalizarTurno:
-                this.actualizarBarraVida(this.vidaJugador, "player1");
-                this.actualizarBarraVida(this.vidaEnemigo, "enemy1");
+                this.actualizarBarraVida(
+                    this.vidaJugador,
+                    this.vidaMaxJugador,
+                    "jugador"
+                );
+                this.actualizarBarraVida(
+                    this.vidaEnemigo,
+                    this.vidaMaxEnemigo,
+                    "enemigo"
+                );
 
                 if (this.vidaJugador <= 0) {
                     this.batallaHUD?.events.emit("desactivar-botones");
@@ -473,7 +503,7 @@ export default class BatallaEscena extends Phaser.Scene {
                     this.resultado = "derrota";
                     await this.esperar(1000);
                     await this.reproducirAnimacion(
-                        this.personaje,
+                        this.jugadorSprite,
                         this.nombreTexturaJugador,
                         "Derrota_derch"
                     );
@@ -482,7 +512,7 @@ export default class BatallaEscena extends Phaser.Scene {
                 } else if (this.vidaEnemigo <= 0) {
                     this.batallaHUD?.events.emit("desactivar-botones");
                     await this.reproducirAnimacion(
-                        this.enemigo1,
+                        this.enemigoSprite,
                         this.nombreTexturaEnemigo,
                         "Derrota_izq"
                     );
@@ -522,52 +552,58 @@ export default class BatallaEscena extends Phaser.Scene {
     // Logica para el ataque del personaje
     private async ataqueJugador(): Promise<void> {
         await this.reproducirAnimacion(
-            this.personaje,
+            this.jugadorSprite,
             this.nombreTexturaJugador,
             "Ataque_basico"
         );
         await this.reproducirAnimacionIdle(
-            this.personaje,
+            this.jugadorSprite,
             this.nombreTexturaJugador,
             "Idle_combate"
         );
 
         const acierto = this.calcularProbabilidad(
-            this.personajeSeleccionado.precisionBase
+            this.personajeJugadorSeleccionado.precisionBase
         );
         if (!acierto) {
-            this.mostrarTextoTurnos(0, "player", "fallo", "enemy1");
+            this.mostrarTextoTurnos(0, "jugador", "fallo", "enemigo");
             await this.esperar(500);
             return;
         }
 
-        this.enemigo1.setTint(0xff3232);
+        this.enemigoSprite.setTint(0xff3232);
 
         await this.reproducirAnimacion(
-            this.enemigo1,
+            this.enemigoSprite,
             this.nombreTexturaEnemigo,
             "Dañado_izq"
         );
         this.esperar(100);
-        this.enemigo1.clearTint();
+        this.enemigoSprite.clearTint();
         await this.reproducirAnimacionIdle(
-            this.enemigo1,
+            this.enemigoSprite,
             this.nombreTexturaEnemigo,
             "Idle_izq"
         );
 
         const critico = this.calcularProbabilidad(
-            this.personajeSeleccionado.criticoBase
+            this.personajeJugadorSeleccionado.criticoBase
         );
-
         const ataque = this.calcularAtaquePersonaje();
-        const ataqueTotal = ataque * (critico ? 2 : 1);
+        const defensaEnemigo =
+            this.enemigo.defensaBase +
+            this.nivelEnemigo * this.enemigo.defensaPorNivel;
+        const ataqueTotal = ataque * (critico ? 2 : 1) - defensaEnemigo;
 
         this.vidaEnemigo = Math.max(0, this.vidaEnemigo - ataqueTotal);
-        this.actualizarBarraVida(this.vidaEnemigo, "enemy1");
+        this.actualizarBarraVida(
+            this.vidaEnemigo,
+            this.vidaMaxEnemigo,
+            "enemigo"
+        );
 
         if (critico) this.mostrarMensaje("¡Golpe crítico!");
-        this.mostrarTextoTurnos(ataqueTotal, "player", "ataque", "enemy1");
+        this.mostrarTextoTurnos(ataqueTotal, "jugador", "ataque", "enemigo");
 
         await this.esperar(500);
     }
@@ -575,46 +611,55 @@ export default class BatallaEscena extends Phaser.Scene {
     // Logica para el ataque del enemigo
     private async ataqueEnemigo(): Promise<void> {
         await this.reproducirAnimacion(
-            this.enemigo1,
+            this.enemigoSprite,
             this.nombreTexturaEnemigo,
             "Ataque_izq"
         );
         await this.reproducirAnimacionIdle(
-            this.enemigo1,
+            this.enemigoSprite,
             this.nombreTexturaEnemigo,
             "Idle_izq"
         );
 
         const acierto = this.calcularProbabilidad(this.enemigo.precisionBase);
         if (!acierto) {
-            this.mostrarTextoTurnos(0, "enemy", "fallo", "player");
+            this.mostrarTextoTurnos(0, "enemigo", "fallo", "jugador");
             await this.esperar(500);
             return;
         }
 
-        this.personaje.setTint(0xff3232);
+        this.jugadorSprite.setTint(0xff3232);
         await this.reproducirAnimacion(
-            this.personaje,
+            this.jugadorSprite,
             this.nombreTexturaJugador,
             "Dañado_derch"
         );
         this.esperar(100);
-        this.personaje.clearTint();
+        this.jugadorSprite.clearTint();
         await this.reproducirAnimacionIdle(
-            this.personaje,
+            this.jugadorSprite,
             this.nombreTexturaJugador,
             "Idle_combate"
         );
 
         const critico = this.calcularProbabilidad(this.enemigo.criticoBase);
         const ataque = this.calcularAtaqueEnemigo();
-        const ataqueTotal = ataque * (critico ? 2 : 1);
+        const defensaPersonajeJugador =
+            this.personajeJugadorSeleccionado.defensaBase +
+            this.personajeJugadorSeleccionado.defensaPorNivel *
+                this.estadisticasPersonaje.nivel;
+        const ataqueTotal =
+            ataque * (critico ? 2 : 1) - defensaPersonajeJugador;
 
         this.vidaJugador = Math.max(0, this.vidaJugador - ataqueTotal);
-        this.actualizarBarraVida(this.vidaJugador, "player1");
+        this.actualizarBarraVida(
+            this.vidaJugador,
+            this.vidaMaxJugador,
+            "jugador"
+        );
 
         if (critico) this.mostrarMensaje("¡Golpe crítico!");
-        this.mostrarTextoTurnos(ataqueTotal, "enemy", "ataque", "player");
+        this.mostrarTextoTurnos(ataqueTotal, "enemigo", "ataque", "jugador");
 
         await this.esperar(500);
     }
@@ -622,15 +667,15 @@ export default class BatallaEscena extends Phaser.Scene {
     private calcularAtaquePersonaje(): number {
         let ataque = 0;
 
-        if (this.personajeSeleccionado.tipoAtaquePrincipal == "fisico") {
+        if (this.personajeJugadorSeleccionado.tipoAtaquePrincipal == "fisico") {
             ataque =
-                this.personajeSeleccionado.ataqueBase +
-                this.personajeSeleccionado.ataquePorNivel *
+                this.personajeJugadorSeleccionado.ataqueBase +
+                this.personajeJugadorSeleccionado.ataquePorNivel *
                     this.estadisticasPersonaje.nivel;
         } else {
             ataque =
-                this.personajeSeleccionado.ataqueMagicoBase +
-                this.personajeSeleccionado.ataqueMagicoPorNivel *
+                this.personajeJugadorSeleccionado.ataqueMagicoBase +
+                this.personajeJugadorSeleccionado.ataqueMagicoPorNivel *
                     this.estadisticasPersonaje.nivel;
         }
 
@@ -682,8 +727,8 @@ export default class BatallaEscena extends Phaser.Scene {
 
     destroy() {
         // Destruir sprites
-        this.personaje?.destroy();
-        this.enemigo1?.destroy();
+        this.jugadorSprite?.destroy();
+        this.enemigoSprite?.destroy();
         this.suelo?.destroy();
         this.fondo?.destroy();
 
