@@ -300,7 +300,7 @@ export default class BatallaHUD extends Phaser.Scene {
                                 .setName("clickOverlay")
                                 .on("pointerdown", () => {
                                     scene.batallaEscena.events.emit(
-                                        "use-item",
+                                        "usar-objeto",
                                         item
                                     );
                                     const textoHijoItem =

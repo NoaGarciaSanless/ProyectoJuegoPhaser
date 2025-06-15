@@ -188,7 +188,7 @@ export default class BatallaEscena extends Phaser.Scene {
             this.siguienteTurno();
         });
 
-        this.events.on("use-item", (item: IObjeto) => item.efecto());
+        this.events.on("usar-objeto", (item: IObjeto) => item.efecto());
 
         this.events.on("volver_al_pueblo", () => {
             this.cameras.main.fadeOut(2500, 0, 0, 0);
@@ -719,7 +719,7 @@ export default class BatallaEscena extends Phaser.Scene {
     private eliminarEventos() {
         // Eliminar solo listeners específicos
         this.events.off("personaje-ataque");
-        this.events.off("use-item");
+        this.events.off("usar-objeto");
         this.events.off("volver_al_pueblo");
     }
 

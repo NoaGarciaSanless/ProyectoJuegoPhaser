@@ -4,6 +4,7 @@ import TarjetaDato from "../../compartido/TarjetaDato/TarjetaDato.vue";
 import {
     filtrarLista,
     recogerEnemigos,
+    recogerObjetos,
     recogerPersonajes,
 } from "../../Servicios/DatosAssetsServicio";
 import { PersonajeDTO } from "../../DTOs/PersonajeDTO";
@@ -49,15 +50,15 @@ async function cargarDatos() {
 
     // Recoge los personajes para mostrarlos en la guia
     let listaPersonajes: PersonajeDTO[] = await recogerPersonajes();
-    console.log(listaPersonajes);
-
     lista.push(...listaPersonajes);
 
     // Recoge los enemigos para mostrarlos en la guia
     let listaEnemigos: EnemigoDTO[] = await recogerEnemigos();
-    console.log(listaEnemigos);
-
     lista.push(...listaEnemigos);
+
+    // Recoge los objetos
+    let listaObjetos: ObjetoDTO[] = await recogerObjetos();
+    lista.push(...listaObjetos);
 
     listaMostrar.value = lista;
 }
@@ -71,8 +72,6 @@ async function filtrar() {
 
     try {
         const resultadoFiltro = await filtrarLista(nombre.value, tipo.value);
-
-        // console.log(resultadoFiltro);
 
         listaMostrar.value = resultadoFiltro;
     } catch (error) {
@@ -170,16 +169,24 @@ onMounted(() => {
 
         <div class="contenido d-flex flex-row justify-content-between w-100 p-3 bg-white rounded shadow">
             <div class="contenedorLista flex-fill m-2" v-if="mostrarLista">
-                <div id="lista" class="d-grid"
-                    style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                <div v-if="listaPaginada.length != 0">
+                    <div id="lista" class="d-grid"
+                        style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
 
-                    <!-- SOLO muestra el seleccionado si está activo -->
-                    <TarjetaDato v-if="mostrarSoloElementoSeleccionado && elementoDetalles" class="elemento"
-                        :dato="elementoDetalles" @mostrar-detalles="configurarElementoDetalles" />
+                        <!-- SOLO muestra el seleccionado si está activo -->
+                        <TarjetaDato v-if="mostrarSoloElementoSeleccionado && elementoDetalles" class="elemento"
+                            :dato="elementoDetalles" @mostrar-detalles="configurarElementoDetalles" />
 
-                    <!-- Muestra la lista paginada normal si NO está activo -->
-                    <TarjetaDato v-else class="elemento" v-for="dato in listaPaginada" :key="`tarjeta-${dato.nombre}`"
-                        :dato="dato" @mostrar-detalles="configurarElementoDetalles" />
+                        <!-- Muestra la lista paginada normal si NO está activo -->
+                        <TarjetaDato v-else class="elemento" v-for="dato in listaPaginada"
+                            :key="`tarjeta-${dato.nombre}`" :dato="dato"
+                            @mostrar-detalles="configurarElementoDetalles" />
+
+                    </div>
+                </div>
+
+                <div v-else>
+                    <p class="text-center fs-2">No se han encotrado datos.</p>
                 </div>
 
                 <!-- Paginación solo si NO se muestra solo el seleccionado -->
@@ -216,6 +223,8 @@ onMounted(() => {
                         <div class="listaEstadisticasPersonaje d-grid gap-2" style="grid-template-columns: 1fr 1fr;">
                             <div class="estadistica d-flex justify-content-between align-items-center bg-light text-dark p-2 rounded shadow-sm"
                                 v-for="(valor, clave) in {
+                                    'Vida base': elementoDetalles.vidaBase,
+                                    'Vida por nivel': elementoDetalles.vidaPorNivel,
                                     'Ataque base': elementoDetalles.ataqueBase,
                                     'Ataque por nivel': elementoDetalles.ataquePorNivel,
                                     'Defensa base': elementoDetalles.defensaBase,
@@ -237,4 +246,3 @@ onMounted(() => {
 </template>
 
 <style src="./Guia-componente.css" scoped></style>
-

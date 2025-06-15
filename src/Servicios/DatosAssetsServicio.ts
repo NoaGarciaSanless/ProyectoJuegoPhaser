@@ -1,4 +1,5 @@
 import { EnemigoDTO } from "../DTOs/EnemigoDTO";
+import { ObjetoDTO } from "../DTOs/ObjetoDTO";
 import { ElementoListaPersonajesDTO, PersonajeDTO } from "../DTOs/PersonajeDTO";
 import { auth, db } from "./ConexionFirebase";
 import {
@@ -129,6 +130,51 @@ export function recogerEnemigos(nombre?: string) {
     });
 }
 
+// Recoge enemigos, luego filtra por nombre y devulve los que coincidan
+export function recogerObjetos(nombre?: string) {
+    return new Promise<ObjetoDTO[]>(async (resolve, reject) => {
+        try {
+            const tabla = collection(db, "objetos");
+            let resultado = await getDocs(tabla);
+
+            if (!resultado.empty) {
+                let lista: ObjetoDTO[] = [];
+
+                resultado.forEach((registro) => {
+                    const valor = registro.data();
+
+                    lista.push(
+                        new ObjetoDTO(
+                            registro.id,
+                            valor.nombre,
+                            valor.descripcion,
+                            valor.tipo,
+                            valor.spriteURL
+                        )
+                    );
+                });
+
+                if (nombre != null && nombre != "") {
+                    lista = lista.filter((objeto) =>
+                        objeto.nombre
+                            .toLowerCase()
+                            .includes(nombre?.trim().toLowerCase())
+                    );
+                }
+
+                resolve(lista);
+            } else {
+                console.log("No se encontraron objetos.");
+                resolve([]);
+            }
+        } catch (error) {
+            console.log(error);
+
+            reject([]);
+        }
+    });
+}
+
 // TODO: filtrar en el resto de tablas
 // De momento filtra enemigos y personajes
 export function filtrarLista(nombre: string, tipo: string) {
@@ -169,8 +215,9 @@ export function filtrarLista(nombre: string, tipo: string) {
             } else {
                 let personajes = await recogerPersonajes(nombre);
                 let enemigos = await recogerEnemigos(nombre);
+                let objetos = await recogerObjetos(nombre);
 
-                lista.push(...personajes, ...enemigos);
+                lista.push(...personajes, ...enemigos, ...objetos);
 
                 // Devuelve la lista
                 resolve([...lista]);

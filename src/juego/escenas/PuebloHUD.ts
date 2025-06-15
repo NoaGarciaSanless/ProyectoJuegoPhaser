@@ -271,6 +271,13 @@ export default class PuebloHUD extends Phaser.Scene {
 
                         let caracteristicas = [
                             {
+                                label: "Vida",
+                                value:
+                                    personaje.vidaBase +
+                                        personaje.vidaPorNivel *
+                                            estadisticas.nivel || 0,
+                            },
+                            {
                                 label: "Ataque",
                                 value:
                                     personaje.ataqueBase +
